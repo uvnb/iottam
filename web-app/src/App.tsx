@@ -96,7 +96,7 @@ function App() {
 
   const readSerialData = async (port: any) => {
     const textDecoder = new TextDecoderStream();
-    const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+    port.readable.pipeTo(textDecoder.writable).catch(console.error);
     const reader = textDecoder.readable.getReader();
     readerRef.current = reader;
 
