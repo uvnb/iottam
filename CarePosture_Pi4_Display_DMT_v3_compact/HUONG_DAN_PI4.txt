@@ -1,0 +1,47 @@
+CAREPOSTURE PI 4 GUI - TEAM DMT
+================================
+
+MUC DICH
+- GUI chi hien thi ket qua 5 tu the, khong doc MPU va khong chay AI.
+- Da chua san ham nhan lenh de sau nay gan BLE/AI.
+- Toi uu cho man hinh ngang 1024x600 cua Raspberry Pi 4.
+
+5 LENH HO TRO
+bad_posture
+bending
+lifting_wrong_back
+normal_idle
+shoulder_asymmetry
+
+CAI DAT TREN RASPBERRY PI OS
+1. Mo Terminal tai thu muc chuong trinh.
+2. Cai Tkinter va Pillow:
+   sudo apt update
+   sudo apt install -y python3-tk python3-pil python3-pil.imagetk
+
+3. Chay GUI:
+   python3 CarePosture_Pi4_GUI.py
+
+Chay thu truc tiep mot tu the:
+   python3 CarePosture_Pi4_GUI.py bad_posture
+
+PHIM DEMO
+1 = bad_posture
+2 = bending
+3 = lifting_wrong_back
+4 = normal_idle
+5 = shoulder_asymmetry
+F11 = bat/tat toan man hinh
+Esc = thoat toan man hinh; bam lan nua de dong GUI
+
+DIEM GAN BLE/AI SAU NAY
+Trong callback nhan duoc lenh, chi can goi:
+   app.receive_posture_command("bad_posture")
+
+Ham chap nhan ca bytes, vi du:
+   app.receive_posture_command(b"shoulder_asymmetry")
+
+Khong can thay doi giao dien hay logic hieu ung.
+
+LUU Y
+Day la cong cu ho tro nhan biet tu the, khong phai thiet bi chan doan y te.
