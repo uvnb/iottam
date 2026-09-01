@@ -1,0 +1,201 @@
+:root {
+  --bg-normal: #121826;
+  --bg-alert: #3a0d13;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent-normal: #10b981;
+  --accent-alert: #ef4444;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-normal);
+  color: var(--text-main);
+  transition: background-color 0.5s ease-in-out;
+}
+
+body.alert {
+  background-color: var(--bg-alert);
+}
+
+#root {
+  width: 100%;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header p {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+/* Posture Display Card */
+.posture-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 4rem 2rem;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.posture-card.normal {
+  border-color: rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 60px rgba(16, 185, 129, 0.1);
+}
+
+.posture-card.alert {
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 80px rgba(239, 68, 68, 0.2);
+  animation: pulse-alert 2s infinite;
+}
+
+/* Status Icon & Text */
+.status-icon {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  position: relative;
+  z-index: 2;
+  transition: all 0.5s ease;
+}
+
+.normal .status-icon {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--accent-normal);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+}
+
+.alert .status-icon {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--accent-alert);
+  box-shadow: 0 0 40px rgba(239, 68, 68, 0.3);
+  animation: shake 0.5s ease-in-out;
+}
+
+.posture-name {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.normal .posture-name {
+  color: var(--accent-normal);
+}
+
+.alert .posture-name {
+  color: var(--accent-alert);
+}
+
+.confidence {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  margin-top: 1rem;
+}
+
+/* Connection Status */
+.connection-status {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 100px;
+  font-size: 0.9rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+}
+
+.status-dot.connected {
+  background-color: var(--accent-normal);
+  box-shadow: 0 0 10px var(--accent-normal);
+}
+
+.status-dot.error {
+  background-color: var(--accent-alert);
+  box-shadow: 0 0 10px var(--accent-alert);
+}
+
+/* Start Audio Button */
+.audio-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+}
+
+.audio-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.audio-btn.enabled {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: var(--accent-normal);
+}
+
+/* Animations */
+@keyframes pulse-alert {
+  0% { box-shadow: 0 0 60px rgba(239, 68, 68, 0.1); }
+  50% { box-shadow: 0 0 100px rgba(239, 68, 68, 0.3); }
+  100% { box-shadow: 0 0 60px rgba(239, 68, 68, 0.1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+}
