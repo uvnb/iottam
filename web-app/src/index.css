@@ -20,7 +20,7 @@ body {
   transition: background-color 0.5s ease-in-out;
 }
 
-body.alert {
+body:has(.alert) {
   background-color: var(--bg-alert);
 }
 
@@ -31,14 +31,16 @@ body.alert {
 }
 
 .app-container {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
-  text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 2rem;
+}
+
+.header {
+  text-align: center;
 }
 
 .header h1 {
@@ -54,18 +56,104 @@ body.alert {
   font-size: 1.1rem;
 }
 
+.main-content {
+  display: flex;
+  width: 100%;
+  gap: 3rem;
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* 2D Model Container */
+.model-container {
+  position: relative;
+  width: 100%;
+  max-width: 350px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  transition: all 0.5s ease;
+}
+
+.model-container.alert {
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 60px rgba(239, 68, 68, 0.1);
+}
+
+.body-model {
+  width: 100%;
+  height: auto;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 20px rgba(255,255,255,0.1));
+}
+
+/* Sensor Points */
+.sensor-point {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--accent-normal);
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.model-container.alert .sensor-point {
+  background-color: var(--accent-alert);
+}
+
+.sensor-point .pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: inherit;
+  animation: pulse-ring 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+  z-index: -1;
+}
+
+.sensor-point .label {
+  position: absolute;
+  left: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  background: rgba(0,0,0,0.7);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: white;
+  pointer-events: none;
+}
+
+/* Approximate Positions over a back view image */
+/* These % values may need tweaking based on the exact back_muscles.png aspect ratio */
+.sensor-point.c7 { top: 22%; left: 50%; }
+.sensor-point.t5 { top: 40%; left: 50%; }
+.sensor-point.l3 { top: 75%; left: 50%; }
+.sensor-point.ls { top: 32%; left: 30%; }
+.sensor-point.rs { top: 32%; left: 70%; }
+
 /* Posture Display Card */
 .posture-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 24px;
-  padding: 4rem 2rem;
-  width: 100%;
-  max-width: 500px;
+  padding: 3rem 2rem;
+  flex: 1;
+  min-width: 300px;
+  max-width: 450px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.2);
   backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
+  text-align: center;
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -82,14 +170,14 @@ body.alert {
 
 /* Status Icon & Text */
 .status-icon {
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  margin: 0 auto 2rem;
+  margin: 0 auto 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 4rem;
+  font-size: 3rem;
   position: relative;
   z-index: 2;
   transition: all 0.5s ease;
@@ -109,24 +197,63 @@ body.alert {
 }
 
 .posture-name {
-  font-size: 3rem;
+  font-size: 2.2rem;
   font-weight: 800;
   margin: 0;
   letter-spacing: -0.02em;
 }
 
-.normal .posture-name {
-  color: var(--accent-normal);
-}
-
-.alert .posture-name {
-  color: var(--accent-alert);
-}
+.normal .posture-name { color: var(--accent-normal); }
+.alert .posture-name { color: var(--accent-alert); }
 
 .confidence {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: var(--text-muted);
   margin-top: 1rem;
+}
+
+/* Sensor Info Box */
+.sensor-info {
+  margin-top: 2rem;
+  text-align: left;
+  background: rgba(0,0,0,0.2);
+  padding: 1.5rem;
+  border-radius: 16px;
+}
+
+.sensor-info h3 {
+  font-size: 1rem;
+  margin: 0 0 1rem 0;
+  color: var(--text-main);
+}
+
+.sensor-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.sensor-info li {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sensor-info .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-normal);
+  transition: background-color 0.3s;
+}
+
+.alert .sensor-info .dot {
+  background-color: var(--accent-alert);
 }
 
 /* Connection Status */
@@ -143,6 +270,7 @@ body.alert {
   font-size: 0.9rem;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 100;
 }
 
 .status-dot {
@@ -152,15 +280,8 @@ body.alert {
   background-color: var(--text-muted);
 }
 
-.status-dot.connected {
-  background-color: var(--accent-normal);
-  box-shadow: 0 0 10px var(--accent-normal);
-}
-
-.status-dot.error {
-  background-color: var(--accent-alert);
-  box-shadow: 0 0 10px var(--accent-alert);
-}
+.status-dot.connected { background-color: var(--accent-normal); box-shadow: 0 0 10px var(--accent-normal); }
+.status-dot.error { background-color: var(--accent-alert); box-shadow: 0 0 10px var(--accent-alert); }
 
 /* Start Audio Button */
 .audio-btn {
@@ -173,20 +294,19 @@ body.alert {
   font-family: inherit;
   font-size: 1rem;
   transition: all 0.2s;
-  margin-bottom: 1rem;
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
 }
 
-.audio-btn:hover {
-  background: rgba(255,255,255,0.2);
-}
-
-.audio-btn.enabled {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: rgba(16, 185, 129, 0.5);
-  color: var(--accent-normal);
-}
+.audio-btn:hover { background: rgba(255,255,255,0.2); }
 
 /* Animations */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
 @keyframes pulse-alert {
   0% { box-shadow: 0 0 60px rgba(239, 68, 68, 0.1); }
   50% { box-shadow: 0 0 100px rgba(239, 68, 68, 0.3); }

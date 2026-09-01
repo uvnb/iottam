@@ -30,12 +30,11 @@ function App() {
   const playAlertSound = () => {
     if (!audioCtxRef.current || !audioEnabled) return;
     
-    // Create a harsh beep sound for bad posture
     const oscillator = audioCtxRef.current.createOscillator();
     const gainNode = audioCtxRef.current.createGain();
     
     oscillator.type = 'square';
-    oscillator.frequency.setValueAtTime(440, audioCtxRef.current.currentTime); // 440Hz
+    oscillator.frequency.setValueAtTime(440, audioCtxRef.current.currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(880, audioCtxRef.current.currentTime + 0.1);
     
     gainNode.gain.setValueAtTime(0, audioCtxRef.current.currentTime);
@@ -50,7 +49,7 @@ function App() {
   };
 
   useEffect(() => {
-    // Connect to a public MQTT broker (using WebSockets)
+    // Connect to a public MQTT broker
     const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
     client.on('connect', () => {
@@ -93,33 +92,81 @@ function App() {
   }, [audioEnabled]);
 
   const isNormal = currentPosture === 0;
+  const statusClass = isNormal ? 'normal' : 'alert';
   
   return (
-    <div className={`app-container`}>
-      {/* Ask user to enable audio (browsers block autoplay) */}
+    <div className="app-container">
+      {/* Ask user to enable audio */}
       {!audioEnabled && (
         <button className="audio-btn" onClick={initAudio}>
           Bật Âm Thanh Cảnh Báo
         </button>
       )}
-      {audioEnabled && (
-        <div className="audio-btn enabled">Âm thanh đã bật</div>
-      )}
 
       <div className="header">
         <h1>CarePosture AI</h1>
-        <p>Hệ thống giám sát và cảnh báo tư thế thời gian thực</p>
+        <p>Theo dõi 5 điểm cảm biến trên cơ lưng</p>
       </div>
 
-      <div className={`posture-card ${isNormal ? 'normal' : 'alert'}`}>
-        <div className="status-icon">
-          {isNormal ? '✓' : '⚠️'}
+      <div className="main-content">
+        {/* Left Side: 2D Model with Sensors */}
+        <div className={`model-container ${statusClass}`}>
+          <img src="/back_muscles.png" alt="Back Muscles" className="body-model" />
+          
+          {/* Sensor points mapped to the image */}
+          {/* C7 - Đốt sống cổ 7 */}
+          <div className="sensor-point c7">
+            <div className="pulse"></div>
+            <span className="label">C7</span>
+          </div>
+          
+          {/* T5 - Đốt sống ngực 5 */}
+          <div className="sensor-point t5">
+            <div className="pulse"></div>
+            <span className="label">T5</span>
+          </div>
+          
+          {/* L3 - Đốt sống thắt lưng 3 */}
+          <div className="sensor-point l3">
+            <div className="pulse"></div>
+            <span className="label">L3</span>
+          </div>
+          
+          {/* LS - Vai trái (Left Shoulder) */}
+          <div className="sensor-point ls">
+            <div className="pulse"></div>
+            <span className="label">LS</span>
+          </div>
+          
+          {/* RS - Vai phải (Right Shoulder) */}
+          <div className="sensor-point rs">
+            <div className="pulse"></div>
+            <span className="label">RS</span>
+          </div>
         </div>
-        <h2 className="posture-name">
-          {POSTURE_CLASSES[currentPosture] || "Chưa xác định"}
-        </h2>
-        <div className="confidence">
-          Độ tin cậy: {(confidence * 100).toFixed(1)}%
+
+        {/* Right Side: Posture Status */}
+        <div className={`posture-card ${statusClass}`}>
+          <div className="status-icon">
+            {isNormal ? '✓' : '⚠️'}
+          </div>
+          <h2 className="posture-name">
+            {POSTURE_CLASSES[currentPosture] || "Chưa xác định"}
+          </h2>
+          <div className="confidence">
+            Độ tin cậy: {(confidence * 100).toFixed(1)}%
+          </div>
+          
+          <div className="sensor-info">
+            <h3>Trạng thái 5 cảm biến (IMU):</h3>
+            <ul>
+              <li><span className="dot"></span> C7: Cổ/Gáy</li>
+              <li><span className="dot"></span> T5: Giữa lưng</li>
+              <li><span className="dot"></span> L3: Thắt lưng</li>
+              <li><span className="dot"></span> LS: Bả vai trái</li>
+              <li><span className="dot"></span> RS: Bả vai phải</li>
+            </ul>
+          </div>
         </div>
       </div>
 
