@@ -218,8 +218,6 @@ function Dashboard({ session }: { session: Session }) {
         setCurrentPosture(postureKey);
         setConfidence(conf);
       }
-      return;
-    }
   };
 
   const connectBLE = async () => {
