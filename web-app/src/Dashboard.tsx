@@ -66,7 +66,8 @@ const POSTURE_DATA: Record<string, any> = {
     reminder: "Relax your arms, level your shoulders, and avoid carrying loads on one side for too long.",
     affected: "Trapezius • Left/Right shoulders • Scapula area",
     safe: false
-
+  }
+};
 
 function Dashboard({ session }: { session: Session }) {
   const [showHistory, setShowHistory] = useState(false);
