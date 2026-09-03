@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './index.css';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
@@ -72,6 +73,7 @@ const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 
 function Dashboard({ session }: { session: Session }) {
+  const navigate = useNavigate();
   const [connectionStatus, setConnectionStatus] = useState<'Disconnected' | 'Connecting' | 'Connected' | 'Error'>('Disconnected');
   const [connectionType, setConnectionType] = useState<'USB' | 'BLE' | null>(null);
   
@@ -430,6 +432,9 @@ function Dashboard({ session }: { session: Session }) {
       )}
 
       <div className="connection-status">
+        <button onClick={() => navigate('/history')} style={{ marginRight: 'auto', background: 'rgba(0,210,255,0.2)', border: '1px solid var(--accent-normal)', color: 'var(--accent-normal)', borderRadius: '4px', cursor: 'pointer', padding: '0.4rem 0.8rem', fontWeight: 'bold' }}>
+          📊 Xem Lịch Sử
+        </button>
         <div className={`status-dot ${connectionStatus === 'Connected' ? 'connected' : connectionStatus === 'Error' ? 'error' : ''}`}></div>
         <span>
           {connectionStatus === 'Disconnected' && <span>Disconnected</span>}
