@@ -6,6 +6,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 export default function History({ session, onClose }: { session: Session, onClose: () => void }) {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLogs();
@@ -19,7 +20,10 @@ export default function History({ session, onClose }: { session: Session, onClos
         .order('timestamp', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
+      if (error) {
+        setErrorMsg(error.message);
+        throw error;
+      }
       setLogs(data || []);
     } catch (error) {
       console.error('Error fetching logs:', error);
@@ -92,7 +96,12 @@ export default function History({ session, onClose }: { session: Session, onClos
           </div>
         </div>
 
-        {loading ? (
+        {errorMsg ? (
+          <div style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '8px', border: '1px solid #ef4444' }}>
+            <p><strong>LỖI TẢI DỮ LIỆU:</strong> {errorMsg}</p>
+            <p>Vui lòng đảm bảo bạn đã tạo bảng <code>posture_logs</code> trên Supabase theo đúng kế hoạch!</p>
+          </div>
+        ) : loading ? (
           <p>Đang tải dữ liệu từ Cloud...</p>
         ) : logs.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>Chưa có dữ liệu nào được ghi nhận. Hãy kết nối thiết bị và sử dụng thử.</p>

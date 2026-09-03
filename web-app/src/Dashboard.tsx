@@ -86,6 +86,7 @@ function Dashboard({ session }: { session: Session }) {
   const sessionIdRef = useRef<string>('');
   const lastLogTimeRef = useRef<number>(0);
   const currentConnTypeRef = useRef<string>('UNKNOWN');
+  const currentPostureRef = useRef<string>('normal_idle');
 
   // USB Refs
   const portRef = useRef<any>(null);
@@ -151,45 +152,48 @@ function Dashboard({ session }: { session: Session }) {
         
         if (!POSTURE_DATA[postureKey]) postureKey = 'normal_idle';
 
-        setCurrentPosture(prev => {
-          const isSafe = POSTURE_DATA[postureKey].safe;
-          const now = Date.now();
-          
-          if (!isSafe) {
-            // Tăng thời gian giãn cách lên 5 giây để AI đọc xong câu
-            if (prev === 'normal_idle' || now - lastBeepRef.current > 5000) {
-              playAlertSound(POSTURE_DATA[postureKey].subtitle);
-              
-              // Gửi thông báo hệ thống (hiện lên khi đang xem tab khác)
-              if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('CarePosture Alert', {
-                  body: POSTURE_DATA[postureKey].subtitle,
-                  tag: 'posture-alert',
-                  renotify: true
-                } as any);
+        const isSafe = POSTURE_DATA[postureKey].safe;
+        const now = Date.now();
+        const prev = currentPostureRef.current;
+        
+        if (!isSafe) {
+          // Tăng thời gian giãn cách lên 5 giây để AI đọc xong câu
+          if (prev === 'normal_idle' || now - lastBeepRef.current > 5000) {
+            playAlertSound(POSTURE_DATA[postureKey].subtitle);
+            
+            // Gửi thông báo hệ thống (hiện lên khi đang xem tab khác)
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('CarePosture Alert', {
+                body: POSTURE_DATA[postureKey].subtitle,
+                tag: 'posture-alert',
+                renotify: true
+              } as any);
+            }
+
+            lastBeepRef.current = now;
+          }
+        }
+
+        if (postureKey !== prev || now - lastLogTimeRef.current > 5000) {
+          if (sessionIdRef.current) {
+            supabase.from('posture_logs').insert([{
+              user_id: session.user.id,
+              session_id: sessionIdRef.current,
+              posture_key: postureKey,
+              confidence: conf,
+              device_type: currentConnTypeRef.current
+            }]).then(({ error }) => {
+              if (error) {
+                console.error('Supabase Sync Error:', error);
+                alert(`Lỗi đồng bộ Cloud: ${error.message}\n(Gợi ý: Kiểm tra xem bảng posture_logs đã được tạo trên Supabase chưa)`);
               }
-
-              lastBeepRef.current = now;
-            }
+            });
           }
+          lastLogTimeRef.current = now;
+        }
 
-          if (postureKey !== prev || now - lastLogTimeRef.current > 5000) {
-            if (sessionIdRef.current) {
-              supabase.from('posture_logs').insert([{
-                user_id: session.user.id,
-                session_id: sessionIdRef.current,
-                posture_key: postureKey,
-                confidence: conf,
-                device_type: currentConnTypeRef.current
-              }]).then(({ error }) => {
-                if (error) console.error('Supabase Sync Error:', error);
-              });
-            }
-            lastLogTimeRef.current = now;
-          }
-
-          return postureKey;
-        });
+        currentPostureRef.current = postureKey;
+        setCurrentPosture(postureKey);
         setConfidence(conf);
       }
       return;
