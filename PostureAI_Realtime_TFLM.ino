@@ -35,6 +35,32 @@
 #include "active_posture_model.h"
 
 // ============================================================
+// BLE Configuration
+// ============================================================
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+
+BLEServer* pServer = NULL;
+BLECharacteristic* pCharacteristic = NULL;
+bool deviceConnected = false;
+bool oldDeviceConnected = false;
+
+#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+
+class MyServerCallbacks: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+      deviceConnected = true;
+    };
+
+    void onDisconnect(BLEServer* pServer) {
+      deviceConnected = false;
+    }
+};
+
+// ============================================================
 // Runtime config
 // ============================================================
 
@@ -601,19 +627,19 @@ void printHeader() {
 }
 
 void printPrediction(unsigned long nowMs, int predIndex, float confidence) {
-  Serial.print(nowMs);
-  Serial.print(",");
+  String csv = String(nowMs) + ",";
   for (int i = 0; i < kRawCount; i++) {
-    if (i) Serial.print(",");
-    Serial.print(liveAngles[i], 3);
+    if (i) csv += ",";
+    csv += String(liveAngles[i], 3);
   }
-  Serial.print(",");
-  Serial.print(predIndex);
-  Serial.print(",");
-  Serial.print(kClassNames[predIndex]);
-  Serial.print(",");
-  Serial.print(confidence, 6);
-  Serial.println();
+  csv += "," + String(predIndex) + "," + String(kClassNames[predIndex]) + "," + String(confidence, 6);
+  
+  Serial.println(csv);
+
+  if (deviceConnected && pCharacteristic != NULL) {
+    pCharacteristic->setValue(csv.c_str());
+    pCharacteristic->notify();
+  }
 }
 
 void maybePrintPrediction(unsigned long nowMs, int predIndex, float confidence) {
@@ -866,6 +892,27 @@ void setup() {
   Wire.begin(SDA_PIN, SCL_PIN, I2C_FREQ);
   Wire.setTimeOut(20);
   delay(300);
+  
+  // Initialize BLE
+  BLEDevice::init("CarePosture_ESP32");
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+  pCharacteristic = pService->createCharacteristic(
+                      CHARACTERISTIC_UUID,
+                      BLECharacteristic::PROPERTY_READ   |
+                      BLECharacteristic::PROPERTY_WRITE  |
+                      BLECharacteristic::PROPERTY_NOTIFY
+                    );
+  pCharacteristic->addDescriptor(new BLE2902());
+  pService->start();
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(false);
+  pAdvertising->setMinPreferred(0x0); 
+  BLEDevice::startAdvertising();
+  Serial.println("# BLE ready. Waiting for connections...");
+  
   probeConfiguredIMUs();
 
   bool okC7 = initMPU(imuC7);
@@ -968,5 +1015,17 @@ void loop() {
   unsigned long afterUs = micros();
   if ((long)(afterUs - nextSampleUs) > (long)SAMPLE_INTERVAL_US) {
     nextSampleUs = afterUs + SAMPLE_INTERVAL_US;
+  }
+
+  // Handle BLE disconnects/reconnects
+  if (!deviceConnected && oldDeviceConnected) {
+      delay(500); // give the bluetooth stack the chance to get things ready
+      pServer->startAdvertising(); // restart advertising
+      Serial.println("# BLE disconnected. Restarting advertising...");
+      oldDeviceConnected = deviceConnected;
+  }
+  if (deviceConnected && !oldDeviceConnected) {
+      oldDeviceConnected = deviceConnected;
+      Serial.println("# BLE connected!");
   }
 }

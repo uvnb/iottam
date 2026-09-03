@@ -1,28 +1,35 @@
 import { useState, useRef, useEffect } from 'react';
 import './index.css';
 
-// The 6 posture classes (matching typical posture AI)
 const POSTURE_CLASSES = [
-  "Bình thường", // 0
-  "Gù lưng (Kyphosis)", // 1
-  "Vẹo cột sống trái", // 2
-  "Vẹo cột sống phải", // 3
-  "Ngả người về trước", // 4
-  "Ngả người ra sau" // 5
+  "Bình thường", 
+  "Gù lưng (Kyphosis)", 
+  "Vẹo cột sống trái", 
+  "Vẹo cột sống phải", 
+  "Ngả người về trước", 
+  "Ngả người ra sau" 
 ];
+
+const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 
 function App() {
   const [connectionStatus, setConnectionStatus] = useState<'Disconnected' | 'Connecting' | 'Connected' | 'Error'>('Disconnected');
+  const [connectionType, setConnectionType] = useState<'USB' | 'BLE' | null>(null);
+  
   const [currentPosture, setCurrentPosture] = useState<number>(0);
   const [confidence, setConfidence] = useState<number>(0);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // Web Serial Port Reference
+  // USB Refs
   const portRef = useRef<any>(null);
   const readerRef = useRef<any>(null);
+  
+  // BLE Refs
+  const bleDeviceRef = useRef<any>(null);
+  const bleCharRef = useRef<any>(null);
 
-  // Initialize Web Audio API for a simple beep sound
   const initAudio = () => {
     if (!audioCtxRef.current) {
       audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -32,7 +39,6 @@ function App() {
 
   const playAlertSound = () => {
     if (!audioCtxRef.current || !audioEnabled) return;
-    
     const oscillator = audioCtxRef.current.createOscillator();
     const gainNode = audioCtxRef.current.createGain();
     
@@ -51,47 +57,111 @@ function App() {
     oscillator.stop(audioCtxRef.current.currentTime + 0.5);
   };
 
+  const parseSerialLine = (line: string) => {
+    if (line.startsWith('t_ms') || line.startsWith('#') || line.length === 0) return;
+
+    const parts = line.split(',');
+    if (parts.length >= 14) {
+      const predIndex = parseInt(parts[11], 10);
+      const conf = parseFloat(parts[13]);
+
+      if (!isNaN(predIndex) && !isNaN(conf)) {
+        setCurrentPosture(prev => {
+          if (prev === 0 && predIndex !== 0) playAlertSound();
+          return predIndex;
+        });
+        setConfidence(conf);
+      }
+    }
+  };
+
   // -------------------------------------------------------------
-  // WEB SERIAL API LOGIC
+  // WEB BLUETOOTH API (BLE)
   // -------------------------------------------------------------
-  const connectSerial = async () => {
-    if (!('serial' in navigator)) {
-      alert('Trình duyệt của bạn không hỗ trợ Web Serial API. Vui lòng sử dụng Google Chrome hoặc Microsoft Edge trên máy tính.');
+  const connectBLE = async () => {
+    if (!('bluetooth' in navigator)) {
+      alert('Trình duyệt không hỗ trợ Web Bluetooth API. Hãy dùng Chrome/Edge trên PC hoặc Android.');
       return;
     }
 
     try {
       setConnectionStatus('Connecting');
+      setConnectionType('BLE');
       
-      // Prompt user to select an ESP32 port
-      const port = await (navigator as any).serial.requestPort();
-      await port.open({ baudRate: 115200 }); // ESP32 is set to 115200 in the .ino file
-      
-      portRef.current = port;
+      const device = await (navigator as any).bluetooth.requestDevice({
+        filters: [{ namePrefix: 'CarePosture' }],
+        optionalServices: [SERVICE_UUID]
+      });
+
+      bleDeviceRef.current = device;
+
+      device.addEventListener('gattserverdisconnected', () => {
+        setConnectionStatus('Disconnected');
+        setConnectionType(null);
+      });
+
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(SERVICE_UUID);
+      const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+      bleCharRef.current = characteristic;
+
+      characteristic.addEventListener('characteristicvaluechanged', (event: any) => {
+        const value = event.target.value;
+        const decoder = new TextDecoder('utf-8');
+        const text = decoder.decode(value);
+        // BLE packets might be chunks, but here we assume our short CSV fits or is handled by ESP32 GATT
+        parseSerialLine(text.trim());
+      });
+
+      await characteristic.startNotifications();
       setConnectionStatus('Connected');
       
-      // Auto-enable audio context on user interaction (if not already enabled)
-      if (!audioCtxRef.current) {
-         initAudio();
-      }
+      if (!audioCtxRef.current) initAudio();
 
-      readSerialData(port);
-      
     } catch (err) {
-      console.error('Lỗi kết nối Serial:', err);
+      console.error('Lỗi BLE:', err);
       setConnectionStatus('Error');
     }
   };
 
-  const disconnectSerial = async () => {
-    if (readerRef.current) {
-      await readerRef.current.cancel();
+  const disconnectBLE = async () => {
+    if (bleCharRef.current) {
+      try { await bleCharRef.current.stopNotifications(); } catch(e){}
     }
-    if (portRef.current) {
-      await portRef.current.close();
+    if (bleDeviceRef.current && bleDeviceRef.current.gatt.connected) {
+      bleDeviceRef.current.gatt.disconnect();
     }
-    portRef.current = null;
+    bleDeviceRef.current = null;
+    bleCharRef.current = null;
     setConnectionStatus('Disconnected');
+    setConnectionType(null);
+  };
+
+  // -------------------------------------------------------------
+  // WEB SERIAL API (USB)
+  // -------------------------------------------------------------
+  const connectSerial = async () => {
+    if (!('serial' in navigator)) {
+      alert('Trình duyệt không hỗ trợ Web Serial API.');
+      return;
+    }
+
+    try {
+      setConnectionStatus('Connecting');
+      setConnectionType('USB');
+      
+      const port = await (navigator as any).serial.requestPort();
+      await port.open({ baudRate: 115200 });
+      portRef.current = port;
+      setConnectionStatus('Connected');
+      
+      if (!audioCtxRef.current) initAudio();
+      readSerialData(port);
+      
+    } catch (err) {
+      console.error('Lỗi Serial:', err);
+      setConnectionStatus('Error');
+    }
   };
 
   const readSerialData = async (port: any) => {
@@ -101,67 +171,41 @@ function App() {
     readerRef.current = reader;
 
     let buffer = '';
-
     try {
       while (true) {
         const { value, done } = await reader.read();
-        if (done) {
-          break; // reader has been canceled
-        }
-        
+        if (done) break;
         buffer += value;
         const lines = buffer.split('\n');
-        
-        // Keep the last incomplete line in the buffer
         buffer = lines.pop() || '';
-
         for (const line of lines) {
           parseSerialLine(line.trim());
         }
       }
     } catch (error) {
-      console.error('Lỗi đọc dữ liệu Serial:', error);
+      console.error('Lỗi đọc Serial:', error);
       setConnectionStatus('Error');
     } finally {
       reader.releaseLock();
     }
   };
 
-  const parseSerialLine = (line: string) => {
-    // Ignore headers and debug comments starting with #
-    if (line.startsWith('t_ms') || line.startsWith('#') || line.length === 0) {
-      return;
-    }
+  const disconnectSerial = async () => {
+    if (readerRef.current) await readerRef.current.cancel();
+    if (portRef.current) await portRef.current.close();
+    portRef.current = null;
+    setConnectionStatus('Disconnected');
+    setConnectionType(null);
+  };
 
-    // Format expected (from PostureAI_Realtime_TFLM.ino):
-    // t_ms, C7_pitch, C7_roll, LS_pitch, LS_roll, RS_pitch, RS_roll, T5_pitch, T5_roll, L3_pitch, L3_roll, predIndex, label, confidence
-    const parts = line.split(',');
-    
-    // There are 1 time + 10 angles + 3 prediction details = 14 columns
-    if (parts.length >= 14) {
-      const predIndex = parseInt(parts[11], 10);
-      // const label = parts[12];
-      const conf = parseFloat(parts[13]);
-
-      if (!isNaN(predIndex) && !isNaN(conf)) {
-        setCurrentPosture(prev => {
-          // If state changes from normal to abnormal, play sound
-          if (prev === 0 && predIndex !== 0) {
-            playAlertSound();
-          }
-          return predIndex;
-        });
-        setConfidence(conf);
-      }
-    }
+  const disconnectAll = () => {
+    if (connectionType === 'BLE') disconnectBLE();
+    if (connectionType === 'USB') disconnectSerial();
   };
 
   useEffect(() => {
     return () => {
-      // Cleanup on unmount
-      if (portRef.current) {
-        disconnectSerial();
-      }
+      disconnectAll();
     };
   }, []);
 
@@ -170,7 +214,6 @@ function App() {
   
   return (
     <div className="app-container">
-      {/* Ask user to enable audio manually if they haven't */}
       {!audioEnabled && connectionStatus === 'Disconnected' && (
         <button className="audio-btn" onClick={initAudio} style={{ top: '6rem' }}>
           Mở Cấp Quyền Âm Thanh
@@ -179,31 +222,30 @@ function App() {
 
       <div className="header">
         <h1>CarePosture AI</h1>
-        <p>Theo dõi 5 điểm cảm biến trên cơ lưng</p>
+        <p>Hỗ trợ BLE Không Dây và Cáp USB</p>
       </div>
 
       {connectionStatus !== 'Connected' ? (
         <div className="connect-prompt">
-          <div className="status-icon" style={{ marginBottom: '2rem' }}>🔌</div>
+          <div className="status-icon" style={{ marginBottom: '2rem' }}>📡</div>
           <h2>Chưa kết nối thiết bị</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-            Vui lòng cắm ESP32 vào cổng USB máy tính của bạn và bấm nút bên dưới.
+            Vui lòng bật ESP32 hoặc cắm vào máy tính, sau đó chọn phương thức kết nối.
           </p>
-          <button 
-            onClick={connectSerial} 
-            className="audio-btn" 
-            style={{ position: 'relative', top: 0, right: 0, fontSize: '1.2rem', padding: '15px 30px' }}
-          >
-            Kết Nối Thiết Bị (USB)
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button onClick={connectBLE} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: 'rgba(16, 185, 129, 0.2)', borderColor: 'rgba(16, 185, 129, 0.5)', color: '#10b981' }}>
+              📡 Kết Nối BLE (Không dây)
+            </button>
+            <button onClick={connectSerial} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px' }}>
+              🔌 Kết Nối USB (Có dây)
+            </button>
+          </div>
         </div>
       ) : (
         <div className="main-content">
-          {/* Left Side: 2D Model with Sensors */}
+          {/* Left Side: 2D Model */}
           <div className={`model-container ${statusClass}`}>
             <img src="/back_muscles.png" alt="Back Muscles" className="body-model" />
-            
-            {/* Sensor points mapped to the image */}
             <div className="sensor-point c7"><div className="pulse"></div><span className="label">C7</span></div>
             <div className="sensor-point t5"><div className="pulse"></div><span className="label">T5</span></div>
             <div className="sensor-point l3"><div className="pulse"></div><span className="label">L3</span></div>
@@ -240,14 +282,14 @@ function App() {
       <div className="connection-status">
         <div className={`status-dot ${connectionStatus === 'Connected' ? 'connected' : connectionStatus === 'Error' ? 'error' : ''}`}></div>
         <span>
-          {connectionStatus === 'Disconnected' && 'Chưa cắm USB'}
-          {connectionStatus === 'Connecting' && 'Đang kết nối cổng COM...'}
-          {connectionStatus === 'Connected' && 'Đã kết nối trực tiếp (115200 baud)'}
-          {connectionStatus === 'Error' && 'Mất kết nối / Lỗi cổng'}
+          {connectionStatus === 'Disconnected' && 'Chưa kết nối'}
+          {connectionStatus === 'Connecting' && `Đang kết nối ${connectionType}...`}
+          {connectionStatus === 'Connected' && `Đã kết nối trực tiếp (${connectionType})`}
+          {connectionStatus === 'Error' && 'Mất kết nối / Lỗi'}
         </span>
         
         {connectionStatus === 'Connected' && (
-          <button onClick={disconnectSerial} style={{ marginLeft: '10px', background: 'transparent', border: '1px solid white', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>
+          <button onClick={disconnectAll} style={{ marginLeft: '10px', background: 'transparent', border: '1px solid white', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>
             Ngắt kết nối
           </button>
         )}
