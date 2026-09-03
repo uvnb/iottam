@@ -380,6 +380,8 @@ function Dashboard({ session }: { session: Session }) {
             <button onClick={() => {
               setConnectionStatus('Connected');
               setConnectionType('USB');
+              currentConnTypeRef.current = 'MOCK';
+              sessionIdRef.current = Date.now().toString();
               parseSerialLine('[AI] class=1,posture=bad_posture,confidence=0.8500');
             }} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: '#3b82f6', borderColor: '#2563eb' }}>
               🧪 Test UI (Mock)
