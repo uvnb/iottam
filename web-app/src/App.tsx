@@ -1,4 +1,30 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import './index.css';
+
+class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ color: 'red', padding: '20px', background: '#fff' }}>
+          <h2>Đã xảy ra lỗi giao diện (Crash):</h2>
+          <pre>{this.state.error?.toString()}</pre>
+          <pre>{this.state.error?.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 import './index.css';
 
 const POSTURE_CLASSES = [
@@ -331,4 +357,10 @@ function App() {
   );
 }
 
-export default App;
+export default function AppWrapper() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
