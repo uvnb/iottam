@@ -181,9 +181,12 @@ function App() {
       if (!audioCtxRef.current) initAudio();
       readSerialData(port);
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Lỗi Serial:', err);
       setConnectionStatus('Error');
+      if (err.toString().includes('NetworkError') || err.toString().includes('Failed to open')) {
+        alert('Lỗi: Cổng USB đang bị chiếm dụng!\n\nVui lòng TẮT Serial Monitor trên Arduino IDE hoặc các phần mềm khác đang mở cổng COM, sau đó thử lại.');
+      }
     }
   };
 
