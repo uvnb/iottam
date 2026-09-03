@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import './index.css';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
+import History from './History';
 
 class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any }> {
   constructor(props: any) {
@@ -73,7 +73,7 @@ const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 
 function Dashboard({ session }: { session: Session }) {
-  const navigate = useNavigate();
+  const [showHistory, setShowHistory] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'Disconnected' | 'Connecting' | 'Connected' | 'Error'>('Disconnected');
   const [connectionType, setConnectionType] = useState<'USB' | 'BLE' | null>(null);
   
@@ -365,6 +365,12 @@ function Dashboard({ session }: { session: Session }) {
         <p>Wireless BLE & Wired USB Support</p>
       </div>
 
+      {showHistory && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999, background: 'rgba(0,0,0,0.85)', overflowY: 'auto' }}>
+          <History session={session} onClose={() => setShowHistory(false)} />
+        </div>
+      )}
+
       {connectionStatus !== 'Connected' ? (
         <div className="connect-prompt">
           <div className="status-icon" style={{ marginBottom: '2rem' }}>📡</div>
@@ -434,7 +440,7 @@ function Dashboard({ session }: { session: Session }) {
       )}
 
       <div className="connection-status">
-        <button onClick={() => navigate('/history')} style={{ marginRight: 'auto', background: 'rgba(0,210,255,0.2)', border: '1px solid var(--accent-normal)', color: 'var(--accent-normal)', borderRadius: '4px', cursor: 'pointer', padding: '0.4rem 0.8rem', fontWeight: 'bold' }}>
+        <button onClick={() => setShowHistory(true)} style={{ marginRight: 'auto', background: 'rgba(0,210,255,0.2)', border: '1px solid var(--accent-normal)', color: 'var(--accent-normal)', borderRadius: '4px', cursor: 'pointer', padding: '0.4rem 0.8rem', fontWeight: 'bold' }}>
           📊 Xem Lịch Sử
         </button>
         <div className={`status-dot ${connectionStatus === 'Connected' ? 'connected' : connectionStatus === 'Error' ? 'error' : ''}`}></div>

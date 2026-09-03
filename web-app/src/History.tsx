@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
 import type { Session } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-export default function History({ session }: { session: Session }) {
+export default function History({ session, onClose }: { session: Session, onClose: () => void }) {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchLogs();
@@ -85,7 +83,7 @@ export default function History({ session }: { session: Session }) {
             <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0 0', textAlign: 'left' }}>Tài khoản: {session.user?.email}</p>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button onClick={() => navigate('/')} className="audio-btn" style={{ position: 'static', background: 'rgba(255,255,255,0.1)' }}>
+            <button onClick={onClose} className="audio-btn" style={{ position: 'static', background: 'rgba(255,255,255,0.1)' }}>
               ⬅ QUAY LẠI
             </button>
             <button onClick={exportCSV} className="audio-btn" style={{ position: 'static', background: 'rgba(16, 185, 129, 0.2)', borderColor: '#10b981', color: '#10b981' }}>
