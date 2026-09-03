@@ -96,6 +96,9 @@ function Dashboard({ session }: { session: Session }) {
   const bleDeviceRef = useRef<any>(null);
   const bleCharRef = useRef<any>(null);
   const bleBufferRef = useRef<string>('');
+  
+  // WebSocket Bridge Ref
+  const wsRef = useRef<WebSocket | null>(null);
 
   const initAudio = () => {
     if (!audioCtxRef.current) {
@@ -148,13 +151,21 @@ function Dashboard({ session }: { session: Session }) {
     let conf = 0;
     let valid = false;
 
-    // Hỗ trợ trường hợp chip gửi dữ liệu JSON (đã ghép chuỗi thành công)
+    // Hỗ trợ trường hợp chip gửi dữ liệu JSON (đã ghép chuỗi thành công hoặc từ WebSocket Bridge)
     if (line.startsWith('{')) {
       try {
-        const data = JSON.parse(line);
-        if (data.posture && data.confidence !== undefined) {
-          postureKey = data.posture;
-          conf = parseFloat(data.confidence);
+        const payload = JSON.parse(line);
+        
+        // Format từ WebSocket Bridge
+        if (payload.type === 'posture' && payload.data) {
+          postureKey = payload.data.posture;
+          conf = parseFloat(payload.data.confidence);
+          valid = true;
+        } 
+        // Format BLE JSON trực tiếp
+        else if (payload.posture && payload.confidence !== undefined) {
+          postureKey = payload.posture;
+          conf = parseFloat(payload.confidence);
           valid = true;
         }
       } catch (e) {}
@@ -290,6 +301,51 @@ function Dashboard({ session }: { session: Session }) {
     setConnectionType(null);
   };
 
+  const connectBridge = () => {
+    if (!audioCtxRef.current) initAudio();
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    
+    setConnectionStatus('Connecting');
+    setConnectionType('BLE'); // Hiện chữ BLE cho user đỡ rối
+    currentConnTypeRef.current = 'BRIDGE_WS';
+    sessionIdRef.current = Date.now().toString();
+
+    const ws = new WebSocket(`ws://${window.location.hostname}:8000/ws`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setConnectionStatus('Connected');
+    };
+
+    ws.onmessage = (event) => {
+      // Bridge gửi text JSON
+      parseSerialLine(event.data);
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+      setConnectionStatus('Error');
+      alert('Không thể kết nối đến WebSocket Bridge.\nHãy đảm bảo bạn đang chạy file ble_web_server.py trên máy tính này (port 8000).');
+    };
+
+    ws.onclose = () => {
+      if (wsRef.current) { // Nếu tự đóng thì không tính là lỗi
+        setConnectionStatus('Disconnected');
+      }
+    };
+  };
+
+  const disconnectBridge = () => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    setConnectionStatus('Disconnected');
+    setConnectionType(null);
+  };
+
   const connectSerial = async () => {
     if (!('serial' in navigator)) {
       alert('Browser does not support Web Serial API.');
@@ -370,8 +426,14 @@ function Dashboard({ session }: { session: Session }) {
   };
 
   const disconnectAll = () => {
-    if (connectionType === 'BLE') disconnectBLE();
-    if (connectionType === 'USB') disconnectSerial();
+    if (currentConnTypeRef.current === 'BLE') disconnectBLE();
+    if (currentConnTypeRef.current === 'USB') disconnectSerial();
+    if (currentConnTypeRef.current === 'BRIDGE_WS') disconnectBridge();
+    
+    // Fallback dọn dẹp
+    disconnectBLE();
+    disconnectSerial();
+    disconnectBridge();
   };
 
   useEffect(() => {
@@ -411,8 +473,11 @@ function Dashboard({ session }: { session: Session }) {
             Please turn on ESP32 or plug it into your computer, then select a connection method.
           </p>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button onClick={connectBLE} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: 'rgba(16, 185, 129, 0.2)', borderColor: 'rgba(16, 185, 129, 0.5)', color: '#10b981' }}>
-              📡 Connect BLE (Wireless)
+            <button onClick={connectBLE} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.5)', color: '#10b981' }}>
+              📡 Web BLE (Chrome)
+            </button>
+            <button onClick={connectBridge} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: 'rgba(139, 92, 246, 0.2)', borderColor: '#8b5cf6', color: '#c4b5fd' }}>
+              🌉 Kết Nối Qua Bridge (Khuyên dùng)
             </button>
             <button onClick={connectSerial} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px' }}>
               🔌 Connect USB (Wired)
