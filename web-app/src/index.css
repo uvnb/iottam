@@ -18,10 +18,10 @@ body {
   background-color: var(--bg-normal);
   background-image: 
     radial-gradient(circle at 50% 0%, rgba(0, 210, 255, 0.05) 0%, transparent 50%),
-    linear-gradient(rgba(3, 10, 22, 0.85), rgba(3, 10, 22, 0.95)),
-    url('/poster.png');
+    linear-gradient(rgba(3, 10, 22, 0.75), rgba(3, 10, 22, 0.95)),
+    url('/poster-bg.jpg');
   background-size: cover;
-  background-position: center;
+  background-position: center top;
   background-attachment: fixed;
   color: var(--text-main);
   transition: background-color 0.5s ease-in-out;
@@ -31,8 +31,8 @@ body:has(.alert) {
   background-color: var(--bg-alert);
   background-image: 
     radial-gradient(circle at 50% 0%, rgba(255, 51, 102, 0.05) 0%, transparent 50%),
-    linear-gradient(rgba(26, 5, 5, 0.85), rgba(26, 5, 5, 0.95)),
-    url('/poster.png');
+    linear-gradient(rgba(26, 5, 5, 0.75), rgba(26, 5, 5, 0.95)),
+    url('/poster-bg.jpg');
 }
 
 #root {

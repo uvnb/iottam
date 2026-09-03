@@ -81,6 +81,9 @@ function Dashboard({ session }: { session: Session }) {
   
   const audioCtxRef = useRef<AudioContext | null>(null);
   const lastBeepRef = useRef<number>(0);
+  const sessionIdRef = useRef<string>('');
+  const lastLogTimeRef = useRef<number>(0);
+  const currentConnTypeRef = useRef<string>('UNKNOWN');
 
   // USB Refs
   const portRef = useRef<any>(null);
@@ -167,6 +170,22 @@ function Dashboard({ session }: { session: Session }) {
               lastBeepRef.current = now;
             }
           }
+
+          if (postureKey !== prev || now - lastLogTimeRef.current > 5000) {
+            if (sessionIdRef.current) {
+              supabase.from('posture_logs').insert([{
+                user_id: session.user.id,
+                session_id: sessionIdRef.current,
+                posture_key: postureKey,
+                confidence: conf,
+                device_type: currentConnTypeRef.current
+              }]).then(({ error }) => {
+                if (error) console.error('Supabase Sync Error:', error);
+              });
+            }
+            lastLogTimeRef.current = now;
+          }
+
           return postureKey;
         });
         setConfidence(conf);
@@ -189,6 +208,8 @@ function Dashboard({ session }: { session: Session }) {
     try {
       setConnectionStatus('Connecting');
       setConnectionType('BLE');
+      currentConnTypeRef.current = 'BLE';
+      sessionIdRef.current = Date.now().toString();
       
       const device = await (navigator as any).bluetooth.requestDevice({
         filters: [{ namePrefix: 'CarePosture' }],
@@ -249,6 +270,8 @@ function Dashboard({ session }: { session: Session }) {
     try {
       setConnectionStatus('Connecting');
       setConnectionType('USB');
+      currentConnTypeRef.current = 'USB';
+      sessionIdRef.current = Date.now().toString();
       
       const port = await (navigator as any).serial.requestPort();
       await port.open({ baudRate: 115200 });
