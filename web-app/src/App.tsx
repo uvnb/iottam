@@ -58,8 +58,31 @@ function App() {
   };
 
   const parseSerialLine = (line: string) => {
-    if (line.startsWith('t_ms') || line.startsWith('#') || line.length === 0) return;
+    if (line.length === 0) return;
 
+    // Hỗ trợ định dạng gốc của user: "[AI] class=4,posture=normal_idle,confidence=1.0000"
+    if (line.includes('[AI] class=')) {
+      const classMatch = line.match(/class=(\d+)/);
+      const confMatch = line.match(/confidence=([\d\.]+)/);
+      if (classMatch && confMatch) {
+        let predIndex = parseInt(classMatch[1], 10);
+        const conf = parseFloat(confMatch[1]);
+        
+        // Theo chuẩn ESP32 của user, class=4 có vẻ là normal_idle (Bình thường).
+        // Ta cần map lại cho khớp với POSTURE_CLASSES (Bình thường = 0).
+        if (line.includes('normal_idle')) predIndex = 0;
+
+        setCurrentPosture(prev => {
+          if (prev === 0 && predIndex !== 0) playAlertSound();
+          return predIndex;
+        });
+        setConfidence(conf);
+      }
+      return;
+    }
+
+    // Hỗ trợ định dạng CSV do web sinh ra: "t_ms, angle1, ..., predIndex, label, confidence"
+    if (line.startsWith('t_ms') || line.startsWith('#')) return;
     const parts = line.split(',');
     if (parts.length >= 14) {
       const predIndex = parseInt(parts[11], 10);
