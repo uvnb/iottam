@@ -140,21 +140,6 @@ function App() {
       return;
     }
 
-    // Hỗ trợ định dạng CSV do web sinh ra: "t_ms, angle1, ..., predIndex, label, confidence"
-    if (line.startsWith('t_ms') || line.startsWith('#')) return;
-    const parts = line.split(',');
-    if (parts.length >= 14) {
-      const predIndex = parseInt(parts[11], 10);
-      const conf = parseFloat(parts[13]);
-
-      if (!isNaN(predIndex) && !isNaN(conf)) {
-        setCurrentPosture(prev => {
-          if (prev === 0 && predIndex !== 0) playAlertSound();
-          return predIndex;
-        });
-        setConfidence(conf);
-      }
-    }
   };
 
   // -------------------------------------------------------------
