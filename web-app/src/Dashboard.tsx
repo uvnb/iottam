@@ -250,7 +250,7 @@ function Dashboard({ session }: { session: Session }) {
       
       const device = await (navigator as any).bluetooth.requestDevice({
         filters: [{ name: 'CAREBOT AI' }],
-        optionalServices: [SERVICE_UUID]
+        optionalServices: [SERVICE_UUID, "4fafc201-1fb5-459e-8fcc-c5c9c331914b"]
       });
 
       bleDeviceRef.current = device;
@@ -261,7 +261,15 @@ function Dashboard({ session }: { session: Session }) {
       });
 
       const server = await device.gatt.connect();
-      const service = await server.getPrimaryService(SERVICE_UUID);
+      
+      let service;
+      try {
+        service = await server.getPrimaryService(SERVICE_UUID);
+      } catch (e) {
+        // Fallback nếu firmware dùng Service UUID cũ
+        service = await server.getPrimaryService("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
+      }
+      
       const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
       bleCharRef.current = characteristic;
 
@@ -312,7 +320,9 @@ function Dashboard({ session }: { session: Session }) {
     currentConnTypeRef.current = 'BRIDGE_WS';
     sessionIdRef.current = Date.now().toString();
 
-    const ws = new WebSocket(`ws://${window.location.hostname}:8000/ws`);
+    // Nếu đang chạy trên vercel thì trỏ về máy tính cục bộ (127.0.0.1)
+    const host = window.location.hostname.includes('vercel.app') ? '127.0.0.1' : window.location.hostname;
+    const ws = new WebSocket(`ws://${host}:8000/ws`);
     wsRef.current = ws;
 
     ws.onopen = () => {
