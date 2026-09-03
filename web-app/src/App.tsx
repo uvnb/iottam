@@ -159,7 +159,7 @@ function App() {
                   body: POSTURE_DATA[postureKey].subtitle,
                   tag: 'posture-alert',
                   renotify: true
-                });
+                } as any);
               }
 
               lastBeepRef.current = now;
