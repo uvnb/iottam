@@ -80,7 +80,10 @@ export default function History({ session }: { session: Session }) {
     <div className="app-container" style={{ minHeight: '80vh', maxWidth: '1000px', width: '100%' }}>
       <div className="posture-card normal" style={{ width: '100%', maxWidth: 'none', padding: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h2 className="posture-name" style={{ fontSize: '1.8rem', textAlign: 'left', margin: 0 }}>DỮ LIỆU LỊCH SỬ (HISTORY)</h2>
+          <div>
+            <h2 className="posture-name" style={{ fontSize: '1.8rem', textAlign: 'left', margin: 0 }}>DỮ LIỆU LỊCH SỬ (HISTORY)</h2>
+            <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0 0', textAlign: 'left' }}>Tài khoản: {session.user?.email}</p>
+          </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button onClick={() => navigate('/')} className="audio-btn" style={{ position: 'static', background: 'rgba(255,255,255,0.1)' }}>
               ⬅ QUAY LẠI
@@ -110,7 +113,7 @@ export default function History({ session }: { session: Session }) {
                     outerRadius={100}
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
                   >
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
