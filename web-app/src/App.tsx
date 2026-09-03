@@ -223,15 +223,31 @@ function App() {
     readerRef.current = reader;
 
     let buffer = '';
+    let lastRenderTime = 0;
+
     try {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         buffer += value;
+        
+        // Chống kẹt bộ đệm nếu mạch gửi rác không có dấu xuống dòng
+        if (buffer.length > 10000) {
+          buffer = buffer.slice(-1000); 
+        }
+
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
-        for (const line of lines) {
-          parseSerialLine(line.trim());
+        
+        const now = Date.now();
+        // Chỉ xử lý dòng cuối cùng hợp lệ để tránh bị dội bom render (Throttle 100ms)
+        if (lines.length > 0 && now - lastRenderTime > 100) {
+          // Lấy dòng gần nhất có chứa dữ liệu AI thay vì xử lý toàn bộ
+          const validLines = lines.filter(l => l.includes('[AI] class=') || l.split(',').length >= 14);
+          if (validLines.length > 0) {
+            parseSerialLine(validLines[validLines.length - 1].trim());
+            lastRenderTime = now;
+          }
         }
       }
     } catch (error) {
