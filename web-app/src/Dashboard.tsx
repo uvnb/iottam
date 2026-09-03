@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './index.css';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from './supabaseClient';
 
 class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any }> {
   constructor(props: any) {
