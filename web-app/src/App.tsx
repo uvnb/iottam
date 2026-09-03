@@ -27,14 +27,48 @@ class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any
 
 import './index.css';
 
-const POSTURE_CLASSES = [
-  "Bình thường", 
-  "Gù lưng (Kyphosis)", 
-  "Vẹo cột sống trái", 
-  "Vẹo cột sống phải", 
-  "Ngả người về trước", 
-  "Ngả người ra sau" 
-];
+const POSTURE_DATA: Record<string, any> = {
+  "normal_idle": {
+    title: "TƯ THẾ ỔN ĐỊNH",
+    subtitle: "Normal idle",
+    alert: "POSTURE OK  •  KEEP A NEUTRAL SPINE  •  RELAX YOUR SHOULDERS",
+    reminder: "Duy trì đầu ở vị trí trung tính, thả lỏng hai vai và đổi tư thế định kỳ.",
+    affected: "Không có vùng cảnh báo nổi bật",
+    safe: true
+  },
+  "bad_posture": {
+    title: "TƯ THẾ GÙ / NGỒI SAI",
+    subtitle: "Bad posture detected",
+    alert: "POSTURE ALERT  •  NECK AND UPPER-BACK LOAD DETECTED  •  SIT TALL",
+    reminder: "Nhẹ nhàng đưa đầu về sau, mở vai và tựa lưng. Không cố ưỡn quá mức.",
+    affected: "Cổ gáy • cơ thang • vai • lưng trên",
+    safe: false
+  },
+  "bending": {
+    title: "CÚI NGƯỜI",
+    subtitle: "Bending detected",
+    alert: "BENDING ALERT  •  REDUCE PROLONGED FORWARD FLEXION  •  RESET POSTURE",
+    reminder: "Rút ngắn thời gian cúi liên tục. Khi đứng lên, giữ chuyển động chậm và có kiểm soát.",
+    affected: "Cổ gáy • lưng giữa • vùng thắt lưng",
+    safe: false
+  },
+  "lifting_wrong_back": {
+    title: "NÂNG VẬT SAI TƯ THẾ",
+    subtitle: "Unsafe back lifting pattern",
+    alert: "LIFTING ALERT  •  LOAD ON LOWER BACK  •  STOP AND RESET YOUR FORM",
+    reminder: "Dừng động tác, đưa vật sát người và dùng chân hỗ trợ. Không xoay thân khi đang nâng.",
+    affected: "Cơ dựng sống • lưng giữa • thắt lưng",
+    safe: false
+  },
+  "shoulder_asymmetry": {
+    title: "LỆCH VAI",
+    subtitle: "Shoulder asymmetry detected",
+    alert: "SHOULDER ALERT  •  UNEVEN SHOULDER POSITION  •  RELAX AND RE-CENTER",
+    reminder: "Thả lỏng tay, cân lại hai vai và tránh mang tải lâu ở một bên.",
+    affected: "Cơ thang • vai trái/phải • quanh xương bả vai",
+    safe: false
+  }
+};
 
 const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
@@ -43,7 +77,7 @@ function App() {
   const [connectionStatus, setConnectionStatus] = useState<'Disconnected' | 'Connecting' | 'Connected' | 'Error'>('Disconnected');
   const [connectionType, setConnectionType] = useState<'USB' | 'BLE' | null>(null);
   
-  const [currentPosture, setCurrentPosture] = useState<number>(0);
+  const [currentPosture, setCurrentPosture] = useState<string>('normal_idle');
   const [confidence, setConfidence] = useState<number>(0);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -86,21 +120,20 @@ function App() {
   const parseSerialLine = (line: string) => {
     if (line.length === 0) return;
 
-    // Hỗ trợ định dạng gốc của user: "[AI] class=4,posture=normal_idle,confidence=1.0000"
     if (line.includes('[AI] class=')) {
-      const classMatch = line.match(/class=(\d+)/);
+      const postureMatch = line.match(/posture=([a-z_]+)/);
       const confMatch = line.match(/confidence=([\d\.]+)/);
-      if (classMatch && confMatch) {
-        let predIndex = parseInt(classMatch[1], 10);
+      if (postureMatch && confMatch) {
+        let postureKey = postureMatch[1];
         const conf = parseFloat(confMatch[1]);
         
-        // Theo chuẩn ESP32 của user, class=4 có vẻ là normal_idle (Bình thường).
-        // Ta cần map lại cho khớp với POSTURE_CLASSES (Bình thường = 0).
-        if (line.includes('normal_idle')) predIndex = 0;
+        // Theo chuẩn ESP32, đôi khi nó có thể gửi class=4 kèm posture=normal_idle. 
+        // Bằng cách dùng trực tiếp key chuỗi chữ, ta không cần lo về class ID nữa!
+        if (!POSTURE_DATA[postureKey]) postureKey = 'normal_idle';
 
         setCurrentPosture(prev => {
-          if (prev === 0 && predIndex !== 0) playAlertSound();
-          return predIndex;
+          if (prev === 'normal_idle' && postureKey !== 'normal_idle') playAlertSound();
+          return postureKey;
         });
         setConfidence(conf);
       }
@@ -275,7 +308,8 @@ function App() {
     };
   }, []);
 
-  const isNormal = currentPosture === 0;
+  const isNormal = currentPosture === 'normal_idle';
+  const postureInfo = POSTURE_DATA[currentPosture] || POSTURE_DATA['normal_idle'];
   const statusClass = connectionStatus === 'Connected' ? (isNormal ? 'normal' : 'alert') : '';
   
   return (
@@ -308,7 +342,7 @@ function App() {
             <button onClick={() => {
               setConnectionStatus('Connected');
               setConnectionType('USB');
-              parseSerialLine('[AI] class=1,posture=kyphosis,confidence=0.8500');
+              parseSerialLine('[AI] class=1,posture=bad_posture,confidence=0.8500');
             }} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: '#3b82f6', borderColor: '#2563eb' }}>
               🧪 Test Giao Diện (Mock)
             </button>
@@ -332,21 +366,30 @@ function App() {
               {isNormal ? '✓' : '⚠️'}
             </div>
             <h2 className="posture-name">
-              <span>{POSTURE_CLASSES[currentPosture] || "Chưa xác định"}</span>
+              <span>{postureInfo.title}</span>
             </h2>
-            <div className="confidence">
+            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '-1rem', marginBottom: '1.5rem', fontWeight: 500 }}>
+              <span>{postureInfo.subtitle}</span>
+            </p>
+            <div className="confidence" style={{ marginBottom: '1.5rem' }}>
               <span>Độ tin cậy: {(confidence * 100).toFixed(1)}%</span>
             </div>
             
-            <div className="sensor-info">
-              <h3>Trạng thái 5 cảm biến (IMU):</h3>
-              <ul>
-                <li><span className="dot"></span> C7: Cổ/Gáy</li>
-                <li><span className="dot"></span> T5: Giữa lưng</li>
-                <li><span className="dot"></span> L3: Thắt lưng</li>
-                <li><span className="dot"></span> LS: Bả vai trái</li>
-                <li><span className="dot"></span> RS: Bả vai phải</li>
-              </ul>
+            <div className="posture-details" style={{ textAlign: 'left', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <strong style={{ color: postureInfo.safe ? '#10b981' : '#f43f5e' }}>
+                  <span>Cảnh báo:</span>
+                </strong> 
+                <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.9rem', lineHeight: '1.5', letterSpacing: '0.5px' }}>{postureInfo.alert}</span>
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <strong style={{ color: 'var(--text-muted)' }}><span>Vùng ảnh hưởng:</span></strong> 
+                <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.9rem' }}>{postureInfo.affected}</span>
+              </div>
+              <div>
+                <strong style={{ color: 'var(--text-muted)' }}><span>Lời khuyên:</span></strong> 
+                <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.9rem', lineHeight: '1.5' }}>{postureInfo.reminder}</span>
+              </div>
             </div>
           </div>
         </div>
