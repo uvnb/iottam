@@ -6,11 +6,9 @@ class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any
     super(props);
     this.state = { hasError: false, error: null };
   }
-
   static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
   }
-
   render() {
     if (this.state.hasError) {
       return (
@@ -25,47 +23,45 @@ class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any
   }
 }
 
-import './index.css';
-
 const POSTURE_DATA: Record<string, any> = {
   "normal_idle": {
-    title: "TƯ THẾ ỔN ĐỊNH",
+    title: "STABLE POSTURE",
     subtitle: "Normal idle",
     alert: "POSTURE OK  •  KEEP A NEUTRAL SPINE  •  RELAX YOUR SHOULDERS",
-    reminder: "Duy trì đầu ở vị trí trung tính, thả lỏng hai vai và đổi tư thế định kỳ.",
-    affected: "Không có vùng cảnh báo nổi bật",
+    reminder: "Maintain your head in a neutral position, relax both shoulders, and change posture periodically.",
+    affected: "No significant warning areas",
     safe: true
   },
   "bad_posture": {
-    title: "TƯ THẾ GÙ / NGỒI SAI",
+    title: "SLOUCHING / BAD POSTURE",
     subtitle: "Bad posture detected",
     alert: "POSTURE ALERT  •  NECK AND UPPER-BACK LOAD DETECTED  •  SIT TALL",
-    reminder: "Nhẹ nhàng đưa đầu về sau, mở vai và tựa lưng. Không cố ưỡn quá mức.",
-    affected: "Cổ gáy • cơ thang • vai • lưng trên",
+    reminder: "Gently bring your head back, open your shoulders, and lean back. Avoid overarching.",
+    affected: "Neck • Trapezius • Shoulders • Upper back",
     safe: false
   },
   "bending": {
-    title: "CÚI NGƯỜI",
+    title: "BENDING",
     subtitle: "Bending detected",
     alert: "BENDING ALERT  •  REDUCE PROLONGED FORWARD FLEXION  •  RESET POSTURE",
-    reminder: "Rút ngắn thời gian cúi liên tục. Khi đứng lên, giữ chuyển động chậm và có kiểm soát.",
-    affected: "Cổ gáy • lưng giữa • vùng thắt lưng",
+    reminder: "Reduce continuous bending time. When standing up, keep movements slow and controlled.",
+    affected: "Neck • Mid back • Lower back",
     safe: false
   },
   "lifting_wrong_back": {
-    title: "NÂNG VẬT SAI TƯ THẾ",
+    title: "UNSAFE LIFTING",
     subtitle: "Unsafe back lifting pattern",
     alert: "LIFTING ALERT  •  LOAD ON LOWER BACK  •  STOP AND RESET YOUR FORM",
-    reminder: "Dừng động tác, đưa vật sát người và dùng chân hỗ trợ. Không xoay thân khi đang nâng.",
-    affected: "Cơ dựng sống • lưng giữa • thắt lưng",
+    reminder: "Stop the movement, bring the object close to your body, and use your legs. Do not twist your torso while lifting.",
+    affected: "Erector spinae • Mid back • Lower back",
     safe: false
   },
   "shoulder_asymmetry": {
-    title: "LỆCH VAI",
+    title: "SHOULDER ASYMMETRY",
     subtitle: "Shoulder asymmetry detected",
     alert: "SHOULDER ALERT  •  UNEVEN SHOULDER POSITION  •  RELAX AND RE-CENTER",
-    reminder: "Thả lỏng tay, cân lại hai vai và tránh mang tải lâu ở một bên.",
-    affected: "Cơ thang • vai trái/phải • quanh xương bả vai",
+    reminder: "Relax your arms, level your shoulders, and avoid carrying loads on one side for too long.",
+    affected: "Trapezius • Left/Right shoulders • Scapula area",
     safe: false
   }
 };
@@ -80,7 +76,9 @@ function App() {
   const [currentPosture, setCurrentPosture] = useState<string>('normal_idle');
   const [confidence, setConfidence] = useState<number>(0);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const lastBeepRef = useRef<number>(0);
 
   // USB Refs
   const portRef = useRef<any>(null);
@@ -94,11 +92,16 @@ function App() {
     if (!audioCtxRef.current) {
       audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
     setAudioEnabled(true);
   };
 
   const playAlertSound = () => {
     if (!audioCtxRef.current || !audioEnabled) return;
+    if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
+    
     const oscillator = audioCtxRef.current.createOscillator();
     const gainNode = audioCtxRef.current.createGain();
     
@@ -127,29 +130,34 @@ function App() {
         let postureKey = postureMatch[1];
         const conf = parseFloat(confMatch[1]);
         
-        // Theo chuẩn ESP32, đôi khi nó có thể gửi class=4 kèm posture=normal_idle. 
-        // Bằng cách dùng trực tiếp key chuỗi chữ, ta không cần lo về class ID nữa!
         if (!POSTURE_DATA[postureKey]) postureKey = 'normal_idle';
 
         setCurrentPosture(prev => {
-          if (prev === 'normal_idle' && postureKey !== 'normal_idle') playAlertSound();
+          const isSafe = POSTURE_DATA[postureKey].safe;
+          const now = Date.now();
+          
+          if (!isSafe) {
+            // Beep if it just changed from a safe posture, or if 3 seconds have passed in an unsafe posture
+            if (prev === 'normal_idle' || now - lastBeepRef.current > 3000) {
+              playAlertSound();
+              lastBeepRef.current = now;
+            }
+          }
           return postureKey;
         });
         setConfidence(conf);
       }
       return;
     }
-
   };
 
-  // -------------------------------------------------------------
-  // WEB BLUETOOTH API (BLE)
-  // -------------------------------------------------------------
   const connectBLE = async () => {
     if (!('bluetooth' in navigator)) {
-      alert('Trình duyệt không hỗ trợ Web Bluetooth API. Hãy dùng Chrome/Edge trên PC hoặc Android.');
+      alert('Browser does not support Web Bluetooth API. Please use Chrome/Edge on PC or Android.');
       return;
     }
+    
+    if (!audioCtxRef.current) initAudio();
 
     try {
       setConnectionStatus('Connecting');
@@ -176,17 +184,13 @@ function App() {
         const value = event.target.value;
         const decoder = new TextDecoder('utf-8');
         const text = decoder.decode(value);
-        // BLE packets might be chunks, but here we assume our short CSV fits or is handled by ESP32 GATT
         parseSerialLine(text.trim());
       });
 
       await characteristic.startNotifications();
       setConnectionStatus('Connected');
-      
-      if (!audioCtxRef.current) initAudio();
-
     } catch (err) {
-      console.error('Lỗi BLE:', err);
+      console.error('BLE Error:', err);
       setConnectionStatus('Error');
     }
   };
@@ -204,14 +208,13 @@ function App() {
     setConnectionType(null);
   };
 
-  // -------------------------------------------------------------
-  // WEB SERIAL API (USB)
-  // -------------------------------------------------------------
   const connectSerial = async () => {
     if (!('serial' in navigator)) {
-      alert('Trình duyệt không hỗ trợ Web Serial API.');
+      alert('Browser does not support Web Serial API.');
       return;
     }
+    
+    if (!audioCtxRef.current) initAudio();
 
     try {
       setConnectionStatus('Connecting');
@@ -222,14 +225,12 @@ function App() {
       portRef.current = port;
       setConnectionStatus('Connected');
       
-      if (!audioCtxRef.current) initAudio();
       readSerialData(port);
-      
     } catch (err: any) {
-      console.error('Lỗi Serial:', err);
+      console.error('Serial Error:', err);
       setConnectionStatus('Error');
       if (err.toString().includes('NetworkError') || err.toString().includes('Failed to open')) {
-        alert('Lỗi: Cổng USB đang bị chiếm dụng!\n\nVui lòng TẮT Serial Monitor trên Arduino IDE hoặc các phần mềm khác đang mở cổng COM, sau đó thử lại.');
+        alert('Error: USB port is currently in use!\n\nPlease close the Serial Monitor in Arduino IDE or any other software using the COM port, then try again.');
       }
     }
   };
@@ -258,7 +259,6 @@ function App() {
         
         const now = Date.now();
         if (lines.length > 0 && now - lastRenderTime > 100) {
-          // Chỉ lấy đúng dòng [AI] class= để đọc độ tin cậy và tư thế
           const aiLines = lines.filter(l => l.includes('[AI] class='));
           if (aiLines.length > 0) {
             parseSerialLine(aiLines[aiLines.length - 1].trim());
@@ -267,7 +267,7 @@ function App() {
         }
       }
     } catch (error) {
-      console.error('Lỗi đọc Serial:', error);
+      console.error('Serial Read Error:', error);
       setConnectionStatus('Error');
     } finally {
       reader.releaseLock();
@@ -301,41 +301,40 @@ function App() {
     <div className="app-container">
       {!audioEnabled && connectionStatus === 'Disconnected' && (
         <button className="audio-btn" onClick={initAudio} style={{ top: '6rem' }}>
-          Mở Cấp Quyền Âm Thanh
+          Enable Audio Alerts
         </button>
       )}
 
       <div className="header">
         <h1>CarePosture AI</h1>
-        <p>Hỗ trợ BLE Không Dây và Cáp USB</p>
+        <p>Wireless BLE & Wired USB Support</p>
       </div>
 
       {connectionStatus !== 'Connected' ? (
         <div className="connect-prompt">
           <div className="status-icon" style={{ marginBottom: '2rem' }}>📡</div>
-          <h2>Chưa kết nối thiết bị</h2>
+          <h2>Device not connected</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-            Vui lòng bật ESP32 hoặc cắm vào máy tính, sau đó chọn phương thức kết nối.
+            Please turn on ESP32 or plug it into your computer, then select a connection method.
           </p>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
             <button onClick={connectBLE} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: 'rgba(16, 185, 129, 0.2)', borderColor: 'rgba(16, 185, 129, 0.5)', color: '#10b981' }}>
-              📡 Kết Nối BLE (Không dây)
+              📡 Connect BLE (Wireless)
             </button>
             <button onClick={connectSerial} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px' }}>
-              🔌 Kết Nối USB (Có dây)
+              🔌 Connect USB (Wired)
             </button>
             <button onClick={() => {
               setConnectionStatus('Connected');
               setConnectionType('USB');
               parseSerialLine('[AI] class=1,posture=bad_posture,confidence=0.8500');
             }} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: '#3b82f6', borderColor: '#2563eb' }}>
-              🧪 Test Giao Diện (Mock)
+              🧪 Test UI (Mock)
             </button>
           </div>
         </div>
       ) : (
         <div className="main-content">
-          {/* Left Side: 2D Model */}
           <div className={`model-container ${statusClass}`}>
             <img src="/back_muscles.png" alt="Back Muscles" className="body-model" />
             <div className="sensor-point c7"><div className="pulse"></div><span className="label">C7</span></div>
@@ -345,7 +344,6 @@ function App() {
             <div className="sensor-point rs"><div className="pulse"></div><span className="label">RS</span></div>
           </div>
 
-          {/* Right Side: Posture Status */}
           <div className={`posture-card ${statusClass}`}>
             <div className="status-icon">
               {isNormal ? '✓' : '⚠️'}
@@ -357,22 +355,21 @@ function App() {
               <span>{postureInfo.subtitle}</span>
             </p>
             <div className="confidence" style={{ marginBottom: '1.5rem' }}>
-              <span>Độ tin cậy: {(confidence * 100).toFixed(1)}%</span>
+              <span>Confidence: {(confidence * 100).toFixed(1)}%</span>
             </div>
             
             <div className="posture-details" style={{ textAlign: 'left', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <strong style={{ color: postureInfo.safe ? '#10b981' : '#f43f5e' }}>
-                  <span>Cảnh báo:</span>
-                </strong> 
-                <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.9rem', lineHeight: '1.5', letterSpacing: '0.5px' }}>{postureInfo.alert}</span>
+              
+              <div style={{ marginBottom: '1.5rem', color: postureInfo.safe ? '#10b981' : '#f43f5e', fontSize: '1.05rem', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                <span>{postureInfo.alert}</span>
               </div>
+
               <div style={{ marginBottom: '1rem' }}>
-                <strong style={{ color: 'var(--text-muted)' }}><span>Vùng ảnh hưởng:</span></strong> 
+                <strong style={{ color: 'var(--text-muted)' }}><span>Affected regions:</span></strong> 
                 <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.9rem' }}>{postureInfo.affected}</span>
               </div>
               <div>
-                <strong style={{ color: 'var(--text-muted)' }}><span>Lời khuyên:</span></strong> 
+                <strong style={{ color: 'var(--text-muted)' }}><span>Recommendation:</span></strong> 
                 <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.9rem', lineHeight: '1.5' }}>{postureInfo.reminder}</span>
               </div>
             </div>
@@ -383,15 +380,15 @@ function App() {
       <div className="connection-status">
         <div className={`status-dot ${connectionStatus === 'Connected' ? 'connected' : connectionStatus === 'Error' ? 'error' : ''}`}></div>
         <span>
-          {connectionStatus === 'Disconnected' && <span>Chưa kết nối</span>}
-          {connectionStatus === 'Connecting' && <span>Đang kết nối {connectionType}...</span>}
-          {connectionStatus === 'Connected' && <span>Đã kết nối trực tiếp ({connectionType})</span>}
-          {connectionStatus === 'Error' && <span>Mất kết nối / Lỗi</span>}
+          {connectionStatus === 'Disconnected' && <span>Disconnected</span>}
+          {connectionStatus === 'Connecting' && <span>Connecting {connectionType}...</span>}
+          {connectionStatus === 'Connected' && <span>Connected via {connectionType}</span>}
+          {connectionStatus === 'Error' && <span>Disconnected / Error</span>}
         </span>
         
         {connectionStatus === 'Connected' && (
           <button onClick={disconnectAll} style={{ marginLeft: '10px', background: 'transparent', border: '1px solid white', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>
-            Ngắt kết nối
+            Disconnect
           </button>
         )}
       </div>
