@@ -69,8 +69,8 @@ const POSTURE_DATA: Record<string, any> = {
   }
 };
 
-const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+const SERVICE_UUID = "12345678-1234-5678-1234-56789abc0001";
+const CHARACTERISTIC_UUID = "12345678-1234-5678-1234-56789abc0001";
 
 function Dashboard({ session }: { session: Session }) {
   const [showHistory, setShowHistory] = useState(false);
@@ -95,6 +95,7 @@ function Dashboard({ session }: { session: Session }) {
   // BLE Refs
   const bleDeviceRef = useRef<any>(null);
   const bleCharRef = useRef<any>(null);
+  const bleBufferRef = useRef<string>('');
 
   const initAudio = () => {
     if (!audioCtxRef.current) {
@@ -143,14 +144,35 @@ function Dashboard({ session }: { session: Session }) {
   const parseSerialLine = (line: string) => {
     if (line.length === 0) return;
 
-    if (line.includes('[AI] class=')) {
+    let postureKey = '';
+    let conf = 0;
+    let valid = false;
+
+    // Hỗ trợ trường hợp chip gửi dữ liệu JSON (đã ghép chuỗi thành công)
+    if (line.startsWith('{')) {
+      try {
+        const data = JSON.parse(line);
+        if (data.posture && data.confidence !== undefined) {
+          postureKey = data.posture;
+          conf = parseFloat(data.confidence);
+          valid = true;
+        }
+      } catch (e) {}
+    }
+
+    // Hỗ trợ trường hợp UART gửi chuỗi text [AI]
+    if (!valid && line.includes('[AI] class=')) {
       const postureMatch = line.match(/posture=([a-z_]+)/);
       const confMatch = line.match(/confidence=([\d\.]+)/);
       if (postureMatch && confMatch) {
-        let postureKey = postureMatch[1];
-        const conf = parseFloat(confMatch[1]);
-        
-        if (!POSTURE_DATA[postureKey]) postureKey = 'normal_idle';
+        postureKey = postureMatch[1];
+        conf = parseFloat(confMatch[1]);
+        valid = true;
+      }
+    }
+
+    if (valid) {
+      if (!POSTURE_DATA[postureKey]) postureKey = 'normal_idle';
 
         const isSafe = POSTURE_DATA[postureKey].safe;
         const now = Date.now();
@@ -218,7 +240,7 @@ function Dashboard({ session }: { session: Session }) {
       sessionIdRef.current = Date.now().toString();
       
       const device = await (navigator as any).bluetooth.requestDevice({
-        filters: [{ namePrefix: 'CarePosture' }],
+        filters: [{ name: 'CAREBOT AI' }],
         optionalServices: [SERVICE_UUID]
       });
 
@@ -238,7 +260,15 @@ function Dashboard({ session }: { session: Session }) {
         const value = event.target.value;
         const decoder = new TextDecoder('utf-8');
         const text = decoder.decode(value);
-        parseSerialLine(text.trim());
+        
+        // Cần nối chuỗi vì BLE giới hạn độ dài gói tin, làm JSON bị cắt nhỏ
+        bleBufferRef.current += text;
+        const lines = bleBufferRef.current.split('\n');
+        bleBufferRef.current = lines.pop() || '';
+        
+        for (const line of lines) {
+          parseSerialLine(line.trim());
+        }
       });
 
       await characteristic.startNotifications();
