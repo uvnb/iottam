@@ -98,26 +98,38 @@ function App() {
     setAudioEnabled(true);
   };
 
-  const playAlertSound = () => {
-    if (!audioCtxRef.current || !audioEnabled) return;
-    if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
-    
-    const oscillator = audioCtxRef.current.createOscillator();
-    const gainNode = audioCtxRef.current.createGain();
-    
-    oscillator.type = 'square';
-    oscillator.frequency.setValueAtTime(440, audioCtxRef.current.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(880, audioCtxRef.current.currentTime + 0.1);
-    
-    gainNode.gain.setValueAtTime(0, audioCtxRef.current.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.5, audioCtxRef.current.currentTime + 0.05);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.5);
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtxRef.current.destination);
-    
-    oscillator.start();
-    oscillator.stop(audioCtxRef.current.currentTime + 0.5);
+  const playAlertSound = (textToSpeak: string) => {
+    if (!audioEnabled) return;
+
+    if (audioCtxRef.current) {
+      if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
+      
+      const oscillator = audioCtxRef.current.createOscillator();
+      const gainNode = audioCtxRef.current.createGain();
+      
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(440, audioCtxRef.current.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(880, audioCtxRef.current.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0, audioCtxRef.current.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.5, audioCtxRef.current.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.5);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtxRef.current.destination);
+      
+      oscillator.start();
+      oscillator.stop(audioCtxRef.current.currentTime + 0.5);
+    }
+
+    // Google Text-to-Speech
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = 'en-US';
+      utterance.rate = 1.1; // Nói nhanh hơn 1 chút
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   const parseSerialLine = (line: string) => {
@@ -137,9 +149,9 @@ function App() {
           const now = Date.now();
           
           if (!isSafe) {
-            // Beep if it just changed from a safe posture, or if 3 seconds have passed in an unsafe posture
-            if (prev === 'normal_idle' || now - lastBeepRef.current > 3000) {
-              playAlertSound();
+            // Tăng thời gian giãn cách lên 5 giây để AI đọc xong câu
+            if (prev === 'normal_idle' || now - lastBeepRef.current > 5000) {
+              playAlertSound(POSTURE_DATA[postureKey].subtitle);
               lastBeepRef.current = now;
             }
           }
@@ -348,12 +360,9 @@ function App() {
             <div className="status-icon">
               {isNormal ? '✓' : '⚠️'}
             </div>
-            <h2 className="posture-name">
-              <span>{postureInfo.title}</span>
-            </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '-1rem', marginBottom: '1.5rem', fontWeight: 500 }}>
+            <h2 className="posture-name" style={{ fontSize: '2rem', textTransform: 'uppercase' }}>
               <span>{postureInfo.subtitle}</span>
-            </p>
+            </h2>
             <div className="confidence" style={{ marginBottom: '1.5rem' }}>
               <span>Confidence: {(confidence * 100).toFixed(1)}%</span>
             </div>
