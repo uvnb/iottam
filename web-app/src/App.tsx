@@ -265,6 +265,13 @@ function App() {
             <button onClick={connectSerial} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px' }}>
               🔌 Kết Nối USB (Có dây)
             </button>
+            <button onClick={() => {
+              setConnectionStatus('Connected');
+              setConnectionType('USB');
+              parseSerialLine('[AI] class=1,posture=kyphosis,confidence=0.8500');
+            }} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: '#3b82f6', borderColor: '#2563eb' }}>
+              🧪 Test Giao Diện (Mock)
+            </button>
           </div>
         </div>
       ) : (
