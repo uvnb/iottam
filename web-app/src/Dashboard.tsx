@@ -483,23 +483,11 @@ function Dashboard({ session }: { session: Session }) {
             Please turn on ESP32 or plug it into your computer, then select a connection method.
           </p>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button onClick={connectBLE} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.5)', color: '#10b981' }}>
-              📡 Web BLE (Chrome)
-            </button>
             <button onClick={connectBridge} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: 'rgba(139, 92, 246, 0.2)', borderColor: '#8b5cf6', color: '#c4b5fd' }}>
-              🌉 Kết Nối Qua Bridge (Khuyên dùng)
+              📡 CONNECT BLE (WIRELESS)
             </button>
             <button onClick={connectSerial} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px' }}>
-              🔌 Connect USB (Wired)
-            </button>
-            <button onClick={() => {
-              setConnectionStatus('Connected');
-              setConnectionType('USB');
-              currentConnTypeRef.current = 'MOCK';
-              sessionIdRef.current = Date.now().toString();
-              parseSerialLine('[AI] class=1,posture=bad_posture,confidence=0.8500');
-            }} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: '#3b82f6', borderColor: '#2563eb' }}>
-              🧪 Test UI (Mock)
+              🔌 CONNECT USB (WIRED)
             </button>
           </div>
         </div>
