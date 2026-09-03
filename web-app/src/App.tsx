@@ -34,11 +34,18 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
-        <Route path="/" element={session ? <DashboardWrapper session={session} /> : <Navigate to="/login" />} />
-      </Routes>
-    </BrowserRouter>
+    <>
+      <video autoPlay loop muted playsInline id="bg-video">
+        <source src="/background.mp4" type="video/mp4" />
+      </video>
+      <div id="overlay"></div>
+
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
+          <Route path="/" element={session ? <DashboardWrapper session={session} /> : <Navigate to="/login" />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 }
