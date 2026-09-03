@@ -66,11 +66,7 @@ const POSTURE_DATA: Record<string, any> = {
     reminder: "Relax your arms, level your shoulders, and avoid carrying loads on one side for too long.",
     affected: "Trapezius • Left/Right shoulders • Scapula area",
     safe: false
-  }
-};
 
-const SERVICE_UUID = "12345678-1234-5678-1234-56789abc0001";
-const CHARACTERISTIC_UUID = "12345678-1234-5678-1234-56789abc0001";
 
 function Dashboard({ session }: { session: Session }) {
   const [showHistory, setShowHistory] = useState(false);
@@ -91,11 +87,6 @@ function Dashboard({ session }: { session: Session }) {
   // USB Refs
   const portRef = useRef<any>(null);
   const readerRef = useRef<any>(null);
-  
-  // BLE Refs
-  const bleDeviceRef = useRef<any>(null);
-  const bleCharRef = useRef<any>(null);
-  const bleBufferRef = useRef<string>('');
   
   // WebSocket Bridge Ref
   const wsRef = useRef<WebSocket | null>(null);
@@ -231,82 +222,8 @@ function Dashboard({ session }: { session: Session }) {
       }
   };
 
-  const connectBLE = async () => {
-    if (!('bluetooth' in navigator)) {
-      alert('Browser does not support Web Bluetooth API. Please use Chrome/Edge on PC or Android.');
-      return;
-    }
-    
-    if (!audioCtxRef.current) initAudio();
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-
-    try {
-      setConnectionStatus('Connecting');
-      setConnectionType('BLE');
-      currentConnTypeRef.current = 'BLE';
-      sessionIdRef.current = Date.now().toString();
-      
-      const device = await (navigator as any).bluetooth.requestDevice({
-        filters: [{ name: 'CAREBOT AI' }],
-        optionalServices: [SERVICE_UUID, "4fafc201-1fb5-459e-8fcc-c5c9c331914b"]
-      });
-
-      bleDeviceRef.current = device;
-
-      device.addEventListener('gattserverdisconnected', () => {
-        setConnectionStatus('Disconnected');
-        setConnectionType(null);
-      });
-
-      const server = await device.gatt.connect();
-      
-      let service;
-      try {
-        service = await server.getPrimaryService(SERVICE_UUID);
-      } catch (e) {
-        // Fallback nếu firmware dùng Service UUID cũ
-        service = await server.getPrimaryService("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
-      }
-      
-      const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
-      bleCharRef.current = characteristic;
-
-      characteristic.addEventListener('characteristicvaluechanged', (event: any) => {
-        const value = event.target.value;
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(value);
-        
-        // Cần nối chuỗi vì BLE giới hạn độ dài gói tin, làm JSON bị cắt nhỏ
-        bleBufferRef.current += text;
-        const lines = bleBufferRef.current.split('\n');
-        bleBufferRef.current = lines.pop() || '';
-        
-        for (const line of lines) {
-          parseSerialLine(line.trim());
-        }
-      });
-
-      await characteristic.startNotifications();
-      setConnectionStatus('Connected');
-    } catch (err) {
-      console.error('BLE Error:', err);
-      setConnectionStatus('Error');
-    }
-  };
-
-  const disconnectBLE = async () => {
-    if (bleCharRef.current) {
-      try { await bleCharRef.current.stopNotifications(); } catch(e){}
-    }
-    if (bleDeviceRef.current && bleDeviceRef.current.gatt.connected) {
-      bleDeviceRef.current.gatt.disconnect();
-    }
-    bleDeviceRef.current = null;
-    bleCharRef.current = null;
-    setConnectionStatus('Disconnected');
-    setConnectionType(null);
+  const disconnectBLE = () => {
+    // Dummy function since we use Bridge now, keeping for safety
   };
 
   const connectBridge = () => {
