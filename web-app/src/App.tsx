@@ -231,7 +231,6 @@ function App() {
         if (done) break;
         buffer += value;
         
-        // Chống kẹt bộ đệm nếu mạch gửi rác không có dấu xuống dòng
         if (buffer.length > 10000) {
           buffer = buffer.slice(-1000); 
         }
@@ -240,12 +239,11 @@ function App() {
         buffer = lines.pop() || '';
         
         const now = Date.now();
-        // Chỉ xử lý dòng cuối cùng hợp lệ để tránh bị dội bom render (Throttle 100ms)
         if (lines.length > 0 && now - lastRenderTime > 100) {
-          // Lấy dòng gần nhất có chứa dữ liệu AI thay vì xử lý toàn bộ
-          const validLines = lines.filter(l => l.includes('[AI] class=') || l.split(',').length >= 14);
-          if (validLines.length > 0) {
-            parseSerialLine(validLines[validLines.length - 1].trim());
+          // Chỉ lấy đúng dòng [AI] class= để đọc độ tin cậy và tư thế
+          const aiLines = lines.filter(l => l.includes('[AI] class='));
+          if (aiLines.length > 0) {
+            parseSerialLine(aiLines[aiLines.length - 1].trim());
             lastRenderTime = now;
           }
         }
@@ -334,10 +332,10 @@ function App() {
               {isNormal ? '✓' : '⚠️'}
             </div>
             <h2 className="posture-name">
-              {POSTURE_CLASSES[currentPosture] || "Chưa xác định"}
+              <span>{POSTURE_CLASSES[currentPosture] || "Chưa xác định"}</span>
             </h2>
             <div className="confidence">
-              Độ tin cậy: {(confidence * 100).toFixed(1)}%
+              <span>Độ tin cậy: {(confidence * 100).toFixed(1)}%</span>
             </div>
             
             <div className="sensor-info">
@@ -357,10 +355,10 @@ function App() {
       <div className="connection-status">
         <div className={`status-dot ${connectionStatus === 'Connected' ? 'connected' : connectionStatus === 'Error' ? 'error' : ''}`}></div>
         <span>
-          {connectionStatus === 'Disconnected' && 'Chưa kết nối'}
-          {connectionStatus === 'Connecting' && `Đang kết nối ${connectionType}...`}
-          {connectionStatus === 'Connected' && `Đã kết nối trực tiếp (${connectionType})`}
-          {connectionStatus === 'Error' && 'Mất kết nối / Lỗi'}
+          {connectionStatus === 'Disconnected' && <span>Chưa kết nối</span>}
+          {connectionStatus === 'Connecting' && <span>Đang kết nối {connectionType}...</span>}
+          {connectionStatus === 'Connected' && <span>Đã kết nối trực tiếp ({connectionType})</span>}
+          {connectionStatus === 'Error' && <span>Mất kết nối / Lỗi</span>}
         </span>
         
         {connectionStatus === 'Connected' && (
