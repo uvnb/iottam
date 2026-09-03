@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function History({ session }: { session: Session }) {
   const [logs, setLogs] = useState<any[]>([]);
@@ -50,6 +51,31 @@ export default function History({ session }: { session: Session }) {
     document.body.removeChild(link);
   };
 
+  const getChartData = () => {
+    const counts: Record<string, number> = {};
+    logs.forEach(log => {
+      counts[log.posture_key] = (counts[log.posture_key] || 0) + 1;
+    });
+
+    const badColors = ['#ff3366', '#f59e0b', '#f97316', '#ef4444', '#8b5cf6'];
+    let badIdx = 0;
+
+    return Object.entries(counts).map(([key, value]) => {
+      let color = '#10b981'; // normal_idle is green
+      if (key !== 'normal_idle') {
+        color = badColors[badIdx % badColors.length];
+        badIdx++;
+      }
+      return {
+        name: key.replace(/_/g, ' ').toUpperCase(),
+        value,
+        color
+      };
+    });
+  };
+
+  const chartData = getChartData();
+
   return (
     <div className="app-container" style={{ minHeight: '80vh', maxWidth: '1000px', width: '100%' }}>
       <div className="posture-card normal" style={{ width: '100%', maxWidth: 'none', padding: '2rem' }}>
@@ -70,7 +96,34 @@ export default function History({ session }: { session: Session }) {
         ) : logs.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>Chưa có dữ liệu nào được ghi nhận. Hãy kết nối thiết bị và sử dụng thử.</p>
         ) : (
-          <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.5)', borderRadius: '12px', border: '1px solid rgba(0, 210, 255, 0.2)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            
+            {/* Biểu đồ tròn thống kê */}
+            <div style={{ height: '300px', background: 'rgba(0,0,0,0.5)', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(0, 210, 255, 0.2)' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#030a16', borderColor: '#00d2ff', borderRadius: '8px' }} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Bảng chi tiết */}
+            <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.5)', borderRadius: '12px', border: '1px solid rgba(0, 210, 255, 0.2)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
               <thead>
                 <tr style={{ background: 'rgba(0, 210, 255, 0.1)', color: 'var(--accent-normal)' }}>
@@ -94,6 +147,7 @@ export default function History({ session }: { session: Session }) {
               </tbody>
             </table>
           </div>
+        </div>
         )}
       </div>
     </div>
