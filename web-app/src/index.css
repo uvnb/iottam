@@ -181,11 +181,11 @@ body:has(.alert) #overlay {
 }
 
 /* Approximate Positions */
-.sensor-point.c7 { top: 22%; left: 50%; }
-.sensor-point.t5 { top: 40%; left: 50%; }
-.sensor-point.l3 { top: 75%; left: 50%; }
-.sensor-point.ls { top: 32%; left: 30%; }
-.sensor-point.rs { top: 32%; left: 70%; }
+.sensor-point.c7 { top: 15%; left: 48.5%; }
+.sensor-point.t5 { top: 40%; left: 48.5%; }
+.sensor-point.l3 { top: 70%; left: 48.5%; }
+.sensor-point.ls { top: 28%; left: 32%; }
+.sensor-point.rs { top: 28%; left: 65%; }
 
 /* Posture Display Card */
 .posture-card {

@@ -393,12 +393,14 @@ function Dashboard({ session }: { session: Session }) {
       ) : (
         <div className="main-content">
           <div className={`model-container ${statusClass}`}>
-            <img src="/back_muscles.png" alt="Back Muscles" className="body-model" />
-            <div className="sensor-point c7"><div className="pulse"></div><span className="label">C7</span></div>
-            <div className="sensor-point t5"><div className="pulse"></div><span className="label">T5</span></div>
-            <div className="sensor-point l3"><div className="pulse"></div><span className="label">L3</span></div>
-            <div className="sensor-point ls"><div className="pulse"></div><span className="label">LS</span></div>
-            <div className="sensor-point rs"><div className="pulse"></div><span className="label">RS</span></div>
+            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <img src="/back_muscles.png" alt="Back Muscles" className="body-model" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px' }} />
+              <div className="sensor-point c7"><div className="pulse"></div><span className="label">C7</span></div>
+              <div className="sensor-point t5"><div className="pulse"></div><span className="label">T5</span></div>
+              <div className="sensor-point l3"><div className="pulse"></div><span className="label">L3</span></div>
+              <div className="sensor-point ls"><div className="pulse"></div><span className="label">LS</span></div>
+              <div className="sensor-point rs"><div className="pulse"></div><span className="label">RS</span></div>
+            </div>
           </div>
 
           <div className={`posture-card ${statusClass}`}>
