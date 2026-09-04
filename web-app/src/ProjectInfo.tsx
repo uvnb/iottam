@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function ProjectInfo() {
   return (
     <div className="project-info-card" style={{
