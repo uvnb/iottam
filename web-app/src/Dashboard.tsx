@@ -3,6 +3,7 @@ import './index.css';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import History from './History';
+import ProjectInfo from './ProjectInfo';
 
 class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any }> {
   constructor(props: any) {
@@ -472,6 +473,10 @@ function Dashboard({ session }: { session: Session }) {
         <button onClick={() => supabase.auth.signOut()} style={{ marginLeft: '15px', background: 'rgba(255,51,102,0.1)', border: '1px solid var(--accent-alert)', color: 'var(--accent-alert)', borderRadius: '4px', cursor: 'pointer', padding: '0.2rem 0.5rem' }}>
           Logout ({session.user?.email})
         </button>
+      </div>
+
+      <div style={{ marginTop: '4rem', width: '100%' }}>
+        <ProjectInfo />
       </div>
     </div>
   );
