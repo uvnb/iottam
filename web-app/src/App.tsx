@@ -6,6 +6,8 @@ import DashboardWrapper from './Dashboard';
 import Login from './Login';
 import './index.css';
 
+import Landing from './Landing';
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,8 +44,9 @@ export default function App() {
 
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
-          <Route path="/" element={session ? <DashboardWrapper session={session} /> : <Navigate to="/login" />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/dashboard" element={session ? <DashboardWrapper session={session} /> : <Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
     </>

@@ -3,7 +3,6 @@ import './index.css';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import History from './History';
-import ProjectInfo from './ProjectInfo';
 
 class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any }> {
   constructor(props: any) {
@@ -376,42 +375,55 @@ function Dashboard({ session }: { session: Session }) {
   const statusClass = connectionStatus === 'Connected' ? (isNormal ? 'normal' : 'alert') : '';
   
   return (
-    <div className="app-container">
-      {!audioEnabled && connectionStatus === 'Disconnected' && (
-        <button className="audio-btn" onClick={initAudio} style={{ top: '6rem' }}>
-          Enable Audio Alerts
-        </button>
-      )}
-
-      <div className="header">
-        <h1>CarePosture AI</h1>
-        <p>Wireless BLE & Wired USB Support</p>
-      </div>
-
-      {showHistory && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999, background: 'rgba(0,0,0,0.85)', overflowY: 'auto' }}>
-          <History session={session} onClose={() => setShowHistory(false)} />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+      {/* HEADER CỐ ĐỊNH */}
+      <header className={`top-header ${statusClass}`}>
+        <div className="header-left">
+          <h1 className="header-title">CAREPOSTURE AI</h1>
         </div>
-      )}
+        
+        <div className="header-center">
+          <div className={`status-dot ${connectionStatus === 'Connected' ? 'connected' : connectionStatus === 'Error' ? 'error' : ''}`}></div>
+          <span style={{ fontSize: '0.95rem' }}>
+            {connectionStatus === 'Disconnected' && 'System Offline'}
+            {connectionStatus === 'Connecting' && `Connecting ${connectionType}...`}
+            {connectionStatus === 'Connected' && `Connected via ${connectionType}`}
+            {connectionStatus === 'Error' && 'Connection Error'}
+          </span>
+          {connectionStatus === 'Connected' && (
+            <button onClick={disconnectAll} style={{ marginLeft: '10px', background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '4px', cursor: 'pointer', padding: '2px 8px', fontSize: '0.8rem' }}>
+              DISCONNECT
+            </button>
+          )}
+        </div>
 
-      {connectionStatus !== 'Connected' ? (
-        <div className="connect-prompt">
-          <div className="status-icon" style={{ marginBottom: '2rem' }}>📡</div>
-          <h2>Device not connected</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-            Please turn on ESP32 or plug it into your computer, then select a connection method.
-          </p>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button onClick={connectBridge} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px', background: 'rgba(139, 92, 246, 0.2)', borderColor: '#8b5cf6', color: '#c4b5fd' }}>
-              📡 CONNECT BLE (WIRELESS)
-            </button>
-            <button onClick={connectSerial} className="audio-btn" style={{ position: 'relative', top: 0, right: 0, fontSize: '1.1rem', padding: '12px 24px' }}>
-              🔌 CONNECT USB (WIRED)
-            </button>
+        <div className="header-right">
+          <button onClick={() => setShowHistory(true)} style={{ background: 'rgba(0,210,255,0.2)', border: '1px solid var(--accent-normal)', color: 'var(--accent-normal)', borderRadius: '4px', cursor: 'pointer', padding: '0.4rem 0.8rem', fontWeight: 'bold' }}>
+            📊 History
+          </button>
+          <button onClick={() => supabase.auth.signOut()} style={{ background: 'rgba(255,51,102,0.1)', border: '1px solid var(--accent-alert)', color: 'var(--accent-alert)', borderRadius: '4px', cursor: 'pointer', padding: '0.4rem 0.8rem' }}>
+            Logout ({session.user?.email?.split('@')[0]})
+          </button>
+        </div>
+      </header>
+
+      {/* CONTENT CHÍNH */}
+      <div className="app-container" style={{ position: 'relative', flex: 1, padding: '2rem' }}>
+        
+        {!audioEnabled && connectionStatus === 'Disconnected' && (
+          <button className="audio-btn" onClick={initAudio} style={{ position: 'absolute', top: '1rem', zIndex: 10 }}>
+            ENABLE AUDIO ALERTS
+          </button>
+        )}
+
+        {showHistory && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999, background: 'rgba(0,0,0,0.85)', overflowY: 'auto' }}>
+            <History session={session} onClose={() => setShowHistory(false)} />
           </div>
-        </div>
-      ) : (
-        <div className="main-content">
+        )}
+
+        {/* Luôn render Dashboard, nhưng làm mờ khi chưa kết nối */}
+        <div className="main-content" style={{ opacity: connectionStatus === 'Connected' ? 1 : 0.2, filter: connectionStatus === 'Connected' ? 'none' : 'grayscale(80%)', transition: 'all 0.5s' }}>
           <div className={`model-container ${statusClass}`}>
             <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
               <img src="/back_muscles.png" alt="Back Muscles" className="body-model" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px' }} />
@@ -451,32 +463,28 @@ function Dashboard({ session }: { session: Session }) {
             </div>
           </div>
         </div>
-      )}
 
-      <div className="connection-status">
-        <button onClick={() => setShowHistory(true)} style={{ marginRight: 'auto', background: 'rgba(0,210,255,0.2)', border: '1px solid var(--accent-normal)', color: 'var(--accent-normal)', borderRadius: '4px', cursor: 'pointer', padding: '0.4rem 0.8rem', fontWeight: 'bold' }}>
-          📊 Xem Lịch Sử
-        </button>
-        <div className={`status-dot ${connectionStatus === 'Connected' ? 'connected' : connectionStatus === 'Error' ? 'error' : ''}`}></div>
-        <span>
-          {connectionStatus === 'Disconnected' && <span>Disconnected</span>}
-          {connectionStatus === 'Connecting' && <span>Connecting {connectionType}...</span>}
-          {connectionStatus === 'Connected' && <span>Connected via {connectionType}</span>}
-          {connectionStatus === 'Error' && <span>Disconnected / Error</span>}
-        </span>
-        
-        {connectionStatus === 'Connected' && (
-          <button onClick={disconnectAll} style={{ marginLeft: '10px', background: 'transparent', border: '1px solid white', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>
-            Disconnect
-          </button>
+        {/* Modal Kết nối nổi lên trên */}
+        {connectionStatus !== 'Connected' && (
+          <div className="connect-modal-overlay">
+            <div className="connect-prompt">
+              <div className="status-icon" style={{ marginBottom: '1.5rem', width: '80px', height: '80px', fontSize: '2.5rem' }}>📡</div>
+              <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem' }}>System Offline</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.6' }}>
+                Please power on the CareBot shirt and select a secure connection method to begin real-time analysis.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button onClick={connectBridge} className="audio-btn" style={{ fontSize: '1.05rem', padding: '12px 20px', background: 'rgba(0, 210, 255, 0.15)', borderColor: '#00d2ff' }}>
+                  📡 CONNECT BLE (WIRELESS)
+                </button>
+                <button onClick={connectSerial} className="audio-btn" style={{ fontSize: '1.05rem', padding: '12px 20px' }}>
+                  🔌 CONNECT USB (WIRED)
+                </button>
+              </div>
+            </div>
+          </div>
         )}
-        <button onClick={() => supabase.auth.signOut()} style={{ marginLeft: '15px', background: 'rgba(255,51,102,0.1)', border: '1px solid var(--accent-alert)', color: 'var(--accent-alert)', borderRadius: '4px', cursor: 'pointer', padding: '0.2rem 0.5rem' }}>
-          Logout ({session.user?.email})
-        </button>
-      </div>
 
-      <div style={{ marginTop: '4rem', width: '100%' }}>
-        <ProjectInfo />
       </div>
     </div>
   );
