@@ -372,8 +372,16 @@ function Dashboard({ session }: { session: Session }) {
   };
 
   useEffect(() => {
-    return () => { disconnectAll(); };
+    return () => disconnectAll();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'asthma') {
+      document.body.classList.add('asthma-bg');
+    } else {
+      document.body.classList.remove('asthma-bg');
+    }
+  }, [activeTab]);
 
   const isNormal = currentPosture === 'normal_idle';
   const statusClass = connectionStatus === 'Connected' ? (isNormal ? 'normal' : 'alert') : '';

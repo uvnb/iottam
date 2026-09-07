@@ -46,10 +46,10 @@ export default function AsthmaDashboard({ data, logs }: AsthmaDashboardProps) {
   );
 
   const getPefStatus = (pef: number) => {
-    if (pef === 0) return { color: 'var(--accent-normal)', text: 'CHỜ DỮ LIỆU (WAITING)', glow: 'rgba(0,210,255,0.5)', bg: 'rgba(0, 210, 255, 0.05)', border: 'rgba(0, 210, 255, 0.4)' };
-    if (pef <= 300) return { color: 'var(--accent-alert)', text: 'NGUY CƠ CAO (HIGH RISK)', glow: 'rgba(255,51,102,0.6)', bg: 'rgba(255, 51, 102, 0.1)', border: 'rgba(255, 51, 102, 0.6)' };
-    if (pef <= 400) return { color: '#f59e0b', text: 'CẢNH BÁO NHẸ (WARNING)', glow: 'rgba(245,158,11,0.5)', bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.5)' };
-    return { color: '#10b981', text: 'TỐT (GOOD)', glow: 'rgba(16,185,129,0.5)', bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.5)' };
+    if (pef === 0) return { color: 'var(--accent-normal)', text: 'WAITING FOR DATA', glow: 'rgba(0,210,255,0.5)', bg: 'rgba(0, 210, 255, 0.05)', border: 'rgba(0, 210, 255, 0.4)' };
+    if (pef <= 300) return { color: 'var(--accent-alert)', text: 'HIGH RISK', glow: 'rgba(255,51,102,0.6)', bg: 'rgba(255, 51, 102, 0.1)', border: 'rgba(255, 51, 102, 0.6)' };
+    if (pef <= 400) return { color: '#f59e0b', text: 'WARNING', glow: 'rgba(245,158,11,0.5)', bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.5)' };
+    return { color: '#10b981', text: 'GOOD', glow: 'rgba(16,185,129,0.5)', bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.5)' };
   };
 
   const pefValue = data ? data.pef : 0;
@@ -86,11 +86,11 @@ export default function AsthmaDashboard({ data, logs }: AsthmaDashboardProps) {
         <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto', padding: '10px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>
             <span>0</span>
-            <span style={{ color: 'var(--accent-alert)' }}>NGUY CƠ CAO</span>
+            <span style={{ color: 'var(--accent-alert)' }}>HIGH RISK</span>
             <span>300</span>
-            <span style={{ color: '#f59e0b' }}>CẢNH BÁO</span>
+            <span style={{ color: '#f59e0b' }}>WARNING</span>
             <span>400</span>
-            <span style={{ color: '#10b981' }}>TỐT</span>
+            <span style={{ color: '#10b981' }}>GOOD</span>
             <span>800+</span>
           </div>
           <div style={{
