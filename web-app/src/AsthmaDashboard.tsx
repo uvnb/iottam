@@ -52,12 +52,18 @@ export default function AsthmaDashboard({ data, logs }: AsthmaDashboardProps) {
     return { color: '#10b981', text: 'TỐT (GOOD)', glow: 'rgba(16,185,129,0.5)', bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.5)' };
   };
 
-  const pefStatus = getPefStatus(data ? data.pef : 0);
+  const pefValue = data ? data.pef : 0;
+  const pefStatus = getPefStatus(pefValue);
+  
+  // Tính % vị trí của pointer (giả sử max PEF = 800)
+  const maxPef = 800;
+  let pointerPos = (pefValue / maxPef) * 100;
+  if (pointerPos > 100) pointerPos = 100;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
       
-      {/* PEF HERO CARD */}
+      {/* PEF HERO CARD & RISK BAR */}
       <div style={{
         background: pefStatus.bg,
         border: `1px solid ${pefStatus.border}`,
@@ -72,8 +78,48 @@ export default function AsthmaDashboard({ data, logs }: AsthmaDashboardProps) {
         <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: pefStatus.color, marginBottom: '1rem', letterSpacing: '1px', textShadow: `0 0 10px ${pefStatus.glow}` }}>
           {pefStatus.text}
         </div>
-        <div style={{ fontSize: '4.5rem', fontWeight: '900', color: pefStatus.color, textShadow: `0 0 20px ${pefStatus.glow}`, lineHeight: '1' }}>
-          {data ? data.pef.toFixed(1) : '0.0'} <span style={{ fontSize: '1.5rem', color: 'var(--text-muted)', fontWeight: 'normal', textShadow: 'none' }}>L/min</span>
+        <div style={{ fontSize: '4.5rem', fontWeight: '900', color: pefStatus.color, textShadow: `0 0 20px ${pefStatus.glow}`, lineHeight: '1', marginBottom: '2rem' }}>
+          {pefValue.toFixed(1)} <span style={{ fontSize: '1.5rem', color: 'var(--text-muted)', fontWeight: 'normal', textShadow: 'none' }}>L/min</span>
+        </div>
+
+        {/* Thanh cảnh báo (Risk Indicator Bar) */}
+        <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto', padding: '10px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>
+            <span>0</span>
+            <span style={{ color: 'var(--accent-alert)' }}>NGUY CƠ CAO</span>
+            <span>300</span>
+            <span style={{ color: '#f59e0b' }}>CẢNH BÁO</span>
+            <span>400</span>
+            <span style={{ color: '#10b981' }}>TỐT</span>
+            <span>800+</span>
+          </div>
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: '16px',
+            borderRadius: '8px',
+            background: 'linear-gradient(90deg, rgba(255,51,102,1) 0%, rgba(255,51,102,1) 37.5%, rgba(245,158,11,1) 37.5%, rgba(245,158,11,1) 50%, rgba(16,185,129,1) 50%, rgba(16,185,129,1) 100%)',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)'
+          }}>
+            {/* Marker / Pointer */}
+            {pefValue > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: '-12px',
+                left: `calc(${pointerPos}% - 10px)`,
+                width: '0',
+                height: '0',
+                borderLeft: '10px solid transparent',
+                borderRight: '10px solid transparent',
+                borderTop: '12px solid white',
+                transition: 'left 0.5s ease',
+                filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.8))'
+              }} />
+            )}
+            {/* Ticks */}
+            <div style={{ position: 'absolute', left: '37.5%', top: 0, bottom: 0, width: '2px', background: 'rgba(0,0,0,0.3)' }}></div>
+            <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '2px', background: 'rgba(0,0,0,0.3)' }}></div>
+          </div>
         </div>
       </div>
 
