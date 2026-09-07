@@ -3,7 +3,9 @@ import './index.css';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import History from './History';
-
+import PostureDashboard from './PostureDashboard';
+import AsthmaDashboard, { type AsthmaData } from './AsthmaDashboard';
+import { POSTURE_DATA } from './constants';
 class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any }> {
   constructor(props: any) {
     super(props);
@@ -26,57 +28,19 @@ class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any
   }
 }
 
-const POSTURE_DATA: Record<string, any> = {
-  "normal_idle": {
-    title: "STABLE POSTURE",
-    subtitle: "Normal idle",
-    alert: "POSTURE OK  •  KEEP A NEUTRAL SPINE  •  RELAX YOUR SHOULDERS",
-    reminder: "Maintain your head in a neutral position, relax both shoulders, and change posture periodically.",
-    affected: "No significant warning areas",
-    safe: true
-  },
-  "bad_posture": {
-    title: "SLOUCHING / BAD POSTURE",
-    subtitle: "Bad posture detected",
-    alert: "POSTURE ALERT  •  NECK AND UPPER-BACK LOAD DETECTED  •  SIT TALL",
-    reminder: "Gently bring your head back, open your shoulders, and lean back. Avoid overarching.",
-    affected: "Neck • Trapezius • Shoulders • Upper back",
-    safe: false
-  },
-  "bending": {
-    title: "BENDING",
-    subtitle: "Bending detected",
-    alert: "BENDING ALERT  •  REDUCE PROLONGED FORWARD FLEXION  •  RESET POSTURE",
-    reminder: "Reduce continuous bending time. When standing up, keep movements slow and controlled.",
-    affected: "Neck • Mid back • Lower back",
-    safe: false
-  },
-  "lifting_wrong_back": {
-    title: "UNSAFE LIFTING",
-    subtitle: "Unsafe back lifting pattern",
-    alert: "LIFTING ALERT  •  LOAD ON LOWER BACK  •  STOP AND RESET YOUR FORM",
-    reminder: "Stop the movement, bring the object close to your body, and use your legs. Do not twist your torso while lifting.",
-    affected: "Erector spinae • Mid back • Lower back",
-    safe: false
-  },
-  "shoulder_asymmetry": {
-    title: "SHOULDER ASYMMETRY",
-    subtitle: "Shoulder asymmetry detected",
-    alert: "SHOULDER ALERT  •  UNEVEN SHOULDER POSITION  •  RELAX AND RE-CENTER",
-    reminder: "Relax your arms, level your shoulders, and avoid carrying loads on one side for too long.",
-    affected: "Trapezius • Left/Right shoulders • Scapula area",
-    safe: false
-  }
-};
-
 function Dashboard({ session }: { session: Session }) {
   const [showHistory, setShowHistory] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'Disconnected' | 'Connecting' | 'Connected' | 'Error'>('Disconnected');
   const [connectionType, setConnectionType] = useState<'USB' | 'BLE' | null>(null);
+  const [activeTab, setActiveTab] = useState<'posture' | 'asthma'>('posture');
   
   const [currentPosture, setCurrentPosture] = useState<string>('normal_idle');
   const [confidence, setConfidence] = useState<number>(0);
   const [audioEnabled, setAudioEnabled] = useState(false);
+
+  // Asthma States
+  const [asthmaData, setAsthmaData] = useState<AsthmaData | null>(null);
+  const [asthmaLogs, setAsthmaLogs] = useState<string[]>([]);
   
   const audioCtxRef = useRef<AudioContext | null>(null);
   const lastBeepRef = useRef<number>(0);
@@ -85,11 +49,8 @@ function Dashboard({ session }: { session: Session }) {
   const currentConnTypeRef = useRef<string>('UNKNOWN');
   const currentPostureRef = useRef<string>('normal_idle');
 
-  // USB Refs
   const portRef = useRef<any>(null);
   const readerRef = useRef<any>(null);
-  
-  // WebSocket Bridge Ref
   const wsRef = useRef<WebSocket | null>(null);
 
   const initAudio = () => {
@@ -126,12 +87,11 @@ function Dashboard({ session }: { session: Session }) {
       oscillator.stop(audioCtxRef.current.currentTime + 0.5);
     }
 
-    // Google Text-to-Speech
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'en-US';
-      utterance.rate = 1.1; // Nói nhanh hơn 1 chút
+      utterance.rate = 1.1;
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -139,22 +99,63 @@ function Dashboard({ session }: { session: Session }) {
   const parseSerialLine = (line: string) => {
     if (line.length === 0) return;
 
+    // --- ASTHMA DATA PARSING ---
+    if (line.startsWith('DATA,ID=')) {
+      try {
+        const parts = line.split(',');
+        const dataMap: any = {};
+        parts.forEach(part => {
+          const [key, val] = part.split('=');
+          if (key && val !== undefined) {
+            dataMap[key.trim()] = val.trim();
+          }
+        });
+
+        if (dataMap['ID']) {
+          const newData: AsthmaData = {
+            id: parseInt(dataMap['ID']) || 0,
+            pm1: parseInt(dataMap['PM1']) || 0,
+            pm25: parseInt(dataMap['PM25']) || 0,
+            pm10: parseInt(dataMap['PM10']) || 0,
+            aqi: parseInt(dataMap['AQI']) || 0,
+            tvoc: parseInt(dataMap['TVOC']) || 0,
+            eco2: parseInt(dataMap['ECO2']) || 0,
+            temp: parseFloat(dataMap['TEMP']) || 0,
+            hum: parseFloat(dataMap['HUM']) || 0,
+            finger: dataMap['FINGER'] || '0',
+            hr: parseFloat(dataMap['HR']) || 0,
+            spo2: parseFloat(dataMap['SPO2']) || 0,
+            rr: parseFloat(dataMap['RR']) || 0,
+            pef: parseFloat(dataMap['PEF']) || 0,
+            rawLine: line
+          };
+          
+          setAsthmaData(newData);
+          setAsthmaLogs(prev => {
+            const newLogs = [line, ...prev];
+            if (newLogs.length > 50) newLogs.pop();
+            return newLogs;
+          });
+        }
+      } catch (e) {
+        console.error("Parse Asthma error", e);
+      }
+      return; 
+    }
+
+    // --- POSTURE DATA PARSING ---
     let postureKey = '';
     let conf = 0;
     let valid = false;
 
-    // Hỗ trợ trường hợp chip gửi dữ liệu JSON (đã ghép chuỗi thành công hoặc từ WebSocket Bridge)
     if (line.startsWith('{')) {
       try {
         const payload = JSON.parse(line);
-        
-        // Format từ WebSocket Bridge
         if (payload.type === 'posture' && payload.data) {
           postureKey = payload.data.posture;
           conf = parseFloat(payload.data.confidence);
           valid = true;
         } 
-        // Format BLE JSON trực tiếp
         else if (payload.posture && payload.confidence !== undefined) {
           postureKey = payload.posture;
           conf = parseFloat(payload.confidence);
@@ -163,7 +164,6 @@ function Dashboard({ session }: { session: Session }) {
       } catch (e) {}
     }
 
-    // Hỗ trợ trường hợp UART gửi chuỗi text [AI]
     if (!valid && line.includes('[AI] class=')) {
       const postureMatch = line.match(/posture=([a-z_]+)/);
       const confMatch = line.match(/confidence=([\d\.]+)/);
@@ -176,56 +176,48 @@ function Dashboard({ session }: { session: Session }) {
 
     if (valid) {
       if (!POSTURE_DATA[postureKey]) postureKey = 'normal_idle';
-
-        const isSafe = POSTURE_DATA[postureKey].safe;
-        const now = Date.now();
-        const prev = currentPostureRef.current;
-        
-        if (!isSafe) {
-          // Tăng thời gian giãn cách lên 5 giây để AI đọc xong câu
-          if (prev === 'normal_idle' || now - lastBeepRef.current > 5000) {
-            playAlertSound(POSTURE_DATA[postureKey].subtitle);
-            
-            // Gửi thông báo hệ thống (hiện lên khi đang xem tab khác)
-            if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification('CarePosture Alert', {
-                body: POSTURE_DATA[postureKey].subtitle,
-                tag: 'posture-alert',
-                renotify: true
-              } as any);
-            }
-
-            lastBeepRef.current = now;
+      const isSafe = POSTURE_DATA[postureKey].safe;
+      const now = Date.now();
+      const prev = currentPostureRef.current;
+      
+      if (!isSafe && postureKey !== 'normal_idle') {
+        if (prev === 'normal_idle' || now - lastBeepRef.current > 5000) {
+          const alertText = postureKey.replace(/_/g, ' ');
+          playAlertSound(alertText);
+          
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('CarePosture Alert', {
+              body: alertText,
+              tag: 'posture-alert',
+              renotify: true
+            } as any);
           }
+          lastBeepRef.current = now;
         }
-
-        if (postureKey !== prev || now - lastLogTimeRef.current > 5000) {
-          if (sessionIdRef.current) {
-            supabase.from('posture_logs').insert([{
-              user_id: session.user.id,
-              session_id: sessionIdRef.current,
-              posture_key: postureKey,
-              confidence: conf,
-              device_type: currentConnTypeRef.current
-            }]).then(({ error }) => {
-              if (error) {
-                console.error('Supabase Sync Error:', error);
-                alert(`Lỗi đồng bộ Cloud: ${error.message}\n(Gợi ý: Kiểm tra xem bảng posture_logs đã được tạo trên Supabase chưa)`);
-              }
-            });
-          }
-          lastLogTimeRef.current = now;
-        }
-
-        currentPostureRef.current = postureKey;
-        setCurrentPosture(postureKey);
-        setConfidence(conf);
       }
+
+      if (postureKey !== prev || now - lastLogTimeRef.current > 5000) {
+        if (sessionIdRef.current) {
+          supabase.from('posture_logs').insert([{
+            user_id: session.user.id,
+            session_id: sessionIdRef.current,
+            posture_key: postureKey,
+            confidence: conf,
+            device_type: currentConnTypeRef.current
+          }]).then(({ error }) => {
+            if (error) console.error('Supabase Sync Error:', error);
+          });
+        }
+        lastLogTimeRef.current = now;
+      }
+
+      currentPostureRef.current = postureKey;
+      setCurrentPosture(postureKey);
+      setConfidence(conf);
+    }
   };
 
-  const disconnectBLE = () => {
-    // Dummy function since we use Bridge now, keeping for safety
-  };
+  const disconnectBLE = () => {};
 
   const connectBridge = () => {
     if (!audioCtxRef.current) initAudio();
@@ -234,11 +226,10 @@ function Dashboard({ session }: { session: Session }) {
     }
     
     setConnectionStatus('Connecting');
-    setConnectionType('BLE'); // Hiện chữ BLE cho user đỡ rối
+    setConnectionType('BLE'); 
     currentConnTypeRef.current = 'BRIDGE_WS';
     sessionIdRef.current = Date.now().toString();
 
-    // Nếu đang chạy trên vercel thì trỏ về máy tính cục bộ (127.0.0.1)
     const host = window.location.hostname.includes('vercel.app') ? '127.0.0.1' : window.location.hostname;
     const ws = new WebSocket(`ws://${host}:8000/ws`);
     wsRef.current = ws;
@@ -248,21 +239,54 @@ function Dashboard({ session }: { session: Session }) {
     };
 
     ws.onmessage = (event) => {
-      // Bridge gửi text JSON
-      parseSerialLine(event.data);
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket Error:', error);
-      setConnectionStatus('Error');
-      alert('Không thể kết nối đến WebSocket Bridge.\nHãy đảm bảo bạn đang chạy file ble_web_server.py trên máy tính này (port 8000).');
+      const line = event.data;
+      parseSerialLine(line);
     };
 
     ws.onclose = () => {
-      if (wsRef.current) { // Nếu tự đóng thì không tính là lỗi
-        setConnectionStatus('Disconnected');
-      }
+      setConnectionStatus('Disconnected');
     };
+
+    ws.onerror = () => {
+      setConnectionStatus('Error');
+    };
+  };
+
+  const connectSerial = async () => {
+    if (!audioCtxRef.current) initAudio();
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    
+    try {
+      const port = await (navigator as any).serial.requestPort();
+      await port.open({ baudRate: 115200 });
+      portRef.current = port;
+      setConnectionStatus('Connected');
+      setConnectionType('USB');
+      currentConnTypeRef.current = 'USB_SERIAL';
+      sessionIdRef.current = Date.now().toString();
+
+      const textDecoder = new TextDecoderStream();
+      port.readable.pipeTo(textDecoder.writable);
+      const reader = textDecoder.readable.getReader();
+      readerRef.current = reader;
+
+      let buffer = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += value;
+        const lines = buffer.split('\n');
+        for (let i = 0; i < lines.length - 1; i++) {
+          parseSerialLine(lines[i].trim());
+        }
+        buffer = lines[lines.length - 1];
+      }
+    } catch (e) {
+      console.error(e);
+      setConnectionStatus('Error');
+    }
   };
 
   const disconnectBridge = () => {
@@ -270,131 +294,75 @@ function Dashboard({ session }: { session: Session }) {
       wsRef.current.close();
       wsRef.current = null;
     }
-    setConnectionStatus('Disconnected');
-    setConnectionType(null);
-  };
-
-  const connectSerial = async () => {
-    if (!('serial' in navigator)) {
-      alert('Browser does not support Web Serial API.');
-      return;
-    }
-    
-    if (!audioCtxRef.current) initAudio();
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-
-    try {
-      setConnectionStatus('Connecting');
-      setConnectionType('USB');
-      currentConnTypeRef.current = 'USB';
-      sessionIdRef.current = Date.now().toString();
-      
-      const port = await (navigator as any).serial.requestPort();
-      await port.open({ baudRate: 115200 });
-      portRef.current = port;
-      setConnectionStatus('Connected');
-      
-      readSerialData(port);
-    } catch (err: any) {
-      console.error('Serial Error:', err);
-      setConnectionStatus('Error');
-      if (err.toString().includes('NetworkError') || err.toString().includes('Failed to open')) {
-        alert('Error: USB port is currently in use!\n\nPlease close the Serial Monitor in Arduino IDE or any other software using the COM port, then try again.');
-      }
-    }
-  };
-
-  const readSerialData = async (port: any) => {
-    const textDecoder = new TextDecoderStream();
-    port.readable.pipeTo(textDecoder.writable).catch(console.error);
-    const reader = textDecoder.readable.getReader();
-    readerRef.current = reader;
-
-    let buffer = '';
-    let lastRenderTime = 0;
-
-    try {
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += value;
-        
-        if (buffer.length > 10000) {
-          buffer = buffer.slice(-1000); 
-        }
-
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        
-        const now = Date.now();
-        if (lines.length > 0 && now - lastRenderTime > 100) {
-          const aiLines = lines.filter(l => l.includes('[AI] class='));
-          if (aiLines.length > 0) {
-            parseSerialLine(aiLines[aiLines.length - 1].trim());
-            lastRenderTime = now;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Serial Read Error:', error);
-      setConnectionStatus('Error');
-    } finally {
-      reader.releaseLock();
-    }
   };
 
   const disconnectSerial = async () => {
     if (readerRef.current) await readerRef.current.cancel();
     if (portRef.current) await portRef.current.close();
-    portRef.current = null;
+  };
+
+  const disconnectAll = () => {
+    disconnectBLE();
+    disconnectSerial();
+    disconnectBridge();
     setConnectionStatus('Disconnected');
     setConnectionType(null);
   };
 
-  const disconnectAll = () => {
-    if (currentConnTypeRef.current === 'BLE') disconnectBLE();
-    if (currentConnTypeRef.current === 'USB') disconnectSerial();
-    if (currentConnTypeRef.current === 'BRIDGE_WS') disconnectBridge();
-    
-    // Fallback dọn dẹp
-    disconnectBLE();
-    disconnectSerial();
-    disconnectBridge();
-  };
-
   useEffect(() => {
-    return () => {
-      disconnectAll();
-    };
+    return () => { disconnectAll(); };
   }, []);
 
   const isNormal = currentPosture === 'normal_idle';
-  const postureInfo = POSTURE_DATA[currentPosture] || POSTURE_DATA['normal_idle'];
   const statusClass = connectionStatus === 'Connected' ? (isNormal ? 'normal' : 'alert') : '';
   
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-      {/* HEADER CỐ ĐỊNH */}
-      <header className={`top-header ${statusClass}`}>
+      <header className={`top-header ${statusClass}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="header-left">
-          <h1 className="header-title">CAREPOSTURE AI</h1>
+          <h1 className="header-title">CAREBOT SYSTEM</h1>
+          
+          <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+            <button 
+              onClick={() => setActiveTab('posture')}
+              style={{
+                background: activeTab === 'posture' ? 'rgba(0, 210, 255, 0.2)' : 'transparent',
+                border: activeTab === 'posture' ? '1px solid var(--accent-normal)' : '1px solid rgba(255,255,255,0.2)',
+                color: activeTab === 'posture' ? 'var(--accent-normal)' : 'var(--text-muted)',
+                padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.3s'
+              }}
+            >
+              POSTURE AI
+            </button>
+            <button 
+              onClick={() => setActiveTab('asthma')}
+              style={{
+                background: activeTab === 'asthma' ? 'rgba(0, 210, 255, 0.2)' : 'transparent',
+                border: activeTab === 'asthma' ? '1px solid var(--accent-normal)' : '1px solid rgba(255,255,255,0.2)',
+                color: activeTab === 'asthma' ? 'var(--accent-normal)' : 'var(--text-muted)',
+                padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.3s'
+              }}
+            >
+              ASTHMA AI
+            </button>
+          </div>
         </div>
         
-        <div className="header-center">
-          <div className={`status-dot ${connectionStatus === 'Connected' ? 'connected' : connectionStatus === 'Error' ? 'error' : ''}`}></div>
-          <span style={{ fontSize: '0.95rem' }}>
-            {connectionStatus === 'Disconnected' && 'System Offline'}
-            {connectionStatus === 'Connecting' && `Connecting ${connectionType}...`}
-            {connectionStatus === 'Connected' && `Connected via ${connectionType}`}
-            {connectionStatus === 'Error' && 'Connection Error'}
-          </span>
-          {connectionStatus === 'Connected' && (
-            <button onClick={disconnectAll} style={{ marginLeft: '10px', background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '4px', cursor: 'pointer', padding: '2px 8px', fontSize: '0.8rem' }}>
-              DISCONNECT
-            </button>
-          )}
+        <div className="header-center" style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(0,0,0,0.4)', padding: '0.5rem 1.5rem', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className={`status-dot ${connectionStatus === 'Connected' ? 'connected' : connectionStatus === 'Error' ? 'error' : ''}`}></div>
+            <span style={{ fontSize: '0.95rem' }}>
+              {connectionStatus === 'Disconnected' && 'System Offline'}
+              {connectionStatus === 'Connecting' && `Connecting ${connectionType}...`}
+              {connectionStatus === 'Connected' && `Connected via ${connectionType}`}
+              {connectionStatus === 'Error' && 'Connection Error'}
+            </span>
+            {connectionStatus === 'Connected' && (
+              <button onClick={disconnectAll} style={{ marginLeft: '10px', background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '4px', cursor: 'pointer', padding: '2px 8px', fontSize: '0.8rem' }}>
+                DISCONNECT
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="header-right">
@@ -407,8 +375,7 @@ function Dashboard({ session }: { session: Session }) {
         </div>
       </header>
 
-      {/* CONTENT CHÍNH */}
-      <div className="app-container" style={{ position: 'relative', flex: 1, padding: '2rem' }}>
+      <div className="app-container" style={{ position: 'relative', flex: 1, padding: '2rem', maxWidth: '100%' }}>
         
         {!audioEnabled && connectionStatus === 'Disconnected' && (
           <button className="audio-btn" onClick={initAudio} style={{ position: 'absolute', top: '1rem', zIndex: 10 }}>
@@ -422,49 +389,14 @@ function Dashboard({ session }: { session: Session }) {
           </div>
         )}
 
-        {/* Luôn render Dashboard, nhưng làm mờ khi chưa kết nối */}
-        <div className="main-content" style={{ opacity: connectionStatus === 'Connected' ? 1 : 0.2, filter: connectionStatus === 'Connected' ? 'none' : 'grayscale(80%)', transition: 'all 0.5s' }}>
-          <div className={`model-container ${statusClass}`}>
-            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-              <img src="/back_muscles.png" alt="Back Muscles" className="body-model" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px' }} />
-              <div className="sensor-point c7"><div className="pulse"></div><span className="label">C7</span></div>
-              <div className="sensor-point t5"><div className="pulse"></div><span className="label">T5</span></div>
-              <div className="sensor-point l3"><div className="pulse"></div><span className="label">L3</span></div>
-              <div className="sensor-point ls"><div className="pulse"></div><span className="label">LS</span></div>
-              <div className="sensor-point rs"><div className="pulse"></div><span className="label">RS</span></div>
-            </div>
-          </div>
-
-          <div className={`posture-card ${statusClass}`}>
-            <div className="status-icon">
-              {isNormal ? '✓' : '⚠️'}
-            </div>
-            <h2 className="posture-name" style={{ fontSize: '2rem', textTransform: 'uppercase' }}>
-              <span>{postureInfo.subtitle}</span>
-            </h2>
-            <div className="confidence" style={{ marginBottom: '1.5rem' }}>
-              <span>Confidence: {(confidence * 100).toFixed(1)}%</span>
-            </div>
-            
-            <div className="posture-details" style={{ textAlign: 'left', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-              
-              <div style={{ marginBottom: '1.5rem', color: postureInfo.safe ? '#10b981' : '#f43f5e', fontSize: '1.05rem', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-                <span>{postureInfo.alert}</span>
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <strong style={{ color: 'var(--text-muted)' }}><span>Affected regions:</span></strong> 
-                <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.9rem' }}>{postureInfo.affected}</span>
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-muted)' }}><span>Recommendation:</span></strong> 
-                <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.9rem', lineHeight: '1.5' }}>{postureInfo.reminder}</span>
-              </div>
-            </div>
-          </div>
+        <div style={{ opacity: connectionStatus === 'Connected' ? 1 : 0.2, filter: connectionStatus === 'Connected' ? 'none' : 'grayscale(80%)', transition: 'all 0.5s', width: '100%', display: 'flex', justifyContent: 'center' }}>
+          {activeTab === 'posture' ? (
+             <PostureDashboard currentPosture={currentPosture} confidence={confidence} statusClass={statusClass} />
+          ) : (
+             <AsthmaDashboard data={asthmaData} logs={asthmaLogs} />
+          )}
         </div>
 
-        {/* Modal Kết nối nổi lên trên */}
         {connectionStatus !== 'Connected' && (
           <div className="connect-modal-overlay">
             <div className="connect-prompt">
