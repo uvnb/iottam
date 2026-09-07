@@ -289,6 +289,46 @@ function Dashboard({ session }: { session: Session }) {
     }
   };
 
+  const wifiIntervalRef = useRef<any>(null);
+
+  const connectWiFi = () => {
+    const ip = prompt("Nhập địa chỉ IP của ESP (Ví dụ: 192.168.137.95)\nLưu ý: Bạn đang dùng web HTTPS, trình duyệt sẽ chặn kết nối tới HTTP IP (Lỗi Mixed Content). Hãy click vào ổ khoá bảo mật trên thanh địa chỉ -> Site Settings -> Insecure content -> Allow.", "192.168.137.95");
+    if (!ip) return;
+    
+    if (!audioCtxRef.current) initAudio();
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    
+    setConnectionStatus('Connecting');
+    setConnectionType('USB'); // Giả lập icon USB cho nó đỡ rối
+    currentConnTypeRef.current = 'WIFI_IP';
+    sessionIdRef.current = Date.now().toString();
+
+    // Lần gọi đầu tiên để kiểm tra kết nối
+    fetch(`http://${ip}/api`)
+      .then(res => res.json())
+      .then(data => {
+        setConnectionStatus('Connected');
+        if (data.lastLine) parseSerialLine(data.lastLine);
+        
+        // Bắt đầu vòng lặp lấy dữ liệu
+        wifiIntervalRef.current = setInterval(() => {
+          fetch(`http://${ip}/api`)
+            .then(res => res.json())
+            .then(d => {
+              if (d.lastLine) parseSerialLine(d.lastLine);
+            })
+            .catch(e => console.error("WiFi Poll error:", e));
+        }, 1000);
+      })
+      .catch(e => {
+        console.error(e);
+        setConnectionStatus('Error');
+        alert("Lỗi kết nối WiFi!\n\nChi tiết:\n1. Kiểm tra IP đã đúng chưa.\n2. Lỗi Mixed Content: Trình duyệt chặn HTTPS kết nối tới HTTP. Hãy chọn 'Allow Insecure Content' trong cài đặt trang hoặc dùng localhost.");
+      });
+  };
+
   const disconnectBridge = () => {
     if (wsRef.current) {
       wsRef.current.close();
@@ -305,6 +345,10 @@ function Dashboard({ session }: { session: Session }) {
     disconnectBLE();
     disconnectSerial();
     disconnectBridge();
+    if (wifiIntervalRef.current) {
+      clearInterval(wifiIntervalRef.current);
+      wifiIntervalRef.current = null;
+    }
     setConnectionStatus('Disconnected');
     setConnectionType(null);
   };
@@ -411,6 +455,9 @@ function Dashboard({ session }: { session: Session }) {
                 </button>
                 <button onClick={connectSerial} className="audio-btn" style={{ fontSize: '1.05rem', padding: '12px 20px' }}>
                   🔌 CONNECT USB (WIRED)
+                </button>
+                <button onClick={connectWiFi} className="audio-btn" style={{ fontSize: '1.05rem', padding: '12px 20px', background: 'rgba(255, 51, 102, 0.15)', borderColor: '#ff3366' }}>
+                  🌐 CONNECT WIFI (ESP IP)
                 </button>
               </div>
             </div>
