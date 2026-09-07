@@ -45,22 +45,35 @@ export default function AsthmaDashboard({ data, logs }: AsthmaDashboardProps) {
     </div>
   );
 
+  const getPefStatus = (pef: number) => {
+    if (pef === 0) return { color: 'var(--accent-normal)', text: 'CHỜ DỮ LIỆU (WAITING)', glow: 'rgba(0,210,255,0.5)', bg: 'rgba(0, 210, 255, 0.05)', border: 'rgba(0, 210, 255, 0.4)' };
+    if (pef <= 300) return { color: 'var(--accent-alert)', text: 'NGUY CƠ CAO (HIGH RISK)', glow: 'rgba(255,51,102,0.6)', bg: 'rgba(255, 51, 102, 0.1)', border: 'rgba(255, 51, 102, 0.6)' };
+    if (pef <= 400) return { color: '#f59e0b', text: 'CẢNH BÁO NHẸ (WARNING)', glow: 'rgba(245,158,11,0.5)', bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.5)' };
+    return { color: '#10b981', text: 'TỐT (GOOD)', glow: 'rgba(16,185,129,0.5)', bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.5)' };
+  };
+
+  const pefStatus = getPefStatus(data ? data.pef : 0);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
       
       {/* PEF HERO CARD */}
       <div style={{
-        background: 'rgba(0, 210, 255, 0.05)',
-        border: '1px solid rgba(0, 210, 255, 0.4)',
+        background: pefStatus.bg,
+        border: `1px solid ${pefStatus.border}`,
         borderRadius: '24px',
         padding: '2rem',
         textAlign: 'center',
-        boxShadow: '0 0 30px rgba(0, 210, 255, 0.1)',
-        backdropFilter: 'blur(10px)'
+        boxShadow: `0 0 30px ${pefStatus.glow}`,
+        backdropFilter: 'blur(10px)',
+        transition: 'all 0.3s ease'
       }}>
-        <h2 style={{ fontSize: '1.2rem', color: 'var(--text-muted)', margin: '0 0 1rem 0', letterSpacing: '2px' }}>PEF AI PREDICTION</h2>
-        <div style={{ fontSize: '4rem', fontWeight: '900', color: 'var(--accent-normal)', textShadow: '0 0 20px rgba(0,210,255,0.5)' }}>
-          {data ? data.pef.toFixed(1) : '0.0'} <span style={{ fontSize: '1.5rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>L/min</span>
+        <h2 style={{ fontSize: '1.2rem', color: 'var(--text-muted)', margin: '0 0 0.5rem 0', letterSpacing: '2px' }}>PEF AI PREDICTION</h2>
+        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: pefStatus.color, marginBottom: '1rem', letterSpacing: '1px', textShadow: `0 0 10px ${pefStatus.glow}` }}>
+          {pefStatus.text}
+        </div>
+        <div style={{ fontSize: '4.5rem', fontWeight: '900', color: pefStatus.color, textShadow: `0 0 20px ${pefStatus.glow}`, lineHeight: '1' }}>
+          {data ? data.pef.toFixed(1) : '0.0'} <span style={{ fontSize: '1.5rem', color: 'var(--text-muted)', fontWeight: 'normal', textShadow: 'none' }}>L/min</span>
         </div>
       </div>
 

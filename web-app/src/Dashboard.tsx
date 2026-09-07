@@ -44,6 +44,7 @@ function Dashboard({ session }: { session: Session }) {
   
   const audioCtxRef = useRef<AudioContext | null>(null);
   const lastBeepRef = useRef<number>(0);
+  const lastAsthmaBeepRef = useRef<number>(0);
   const sessionIdRef = useRef<string>('');
   const lastLogTimeRef = useRef<number>(0);
   const currentConnTypeRef = useRef<string>('UNKNOWN');
@@ -136,6 +137,23 @@ function Dashboard({ session }: { session: Session }) {
             if (newLogs.length > 50) newLogs.pop();
             return newLogs;
           });
+
+          // --- ASTHMA ALERT LOGIC ---
+          if (newData.pef > 0 && newData.pef <= 300) {
+            const now = Date.now();
+            if (now - lastAsthmaBeepRef.current > 10000) {
+              playAlertSound("Cảnh báo! Lưu lượng đỉnh quá thấp, nguy cơ lên cơn hen suyễn.");
+              if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('⚠️ CẢNH BÁO HEN SUYỄN', {
+                  body: `Nguy cơ cao! Lưu lượng đỉnh (PEF) giảm xuống mức ${newData.pef.toFixed(1)} L/min.`,
+                  tag: 'asthma-alert',
+                  renotify: true
+                } as any);
+              }
+              lastAsthmaBeepRef.current = now;
+            }
+          }
+
         }
       } catch (e) {
         console.error("Parse Asthma error", e);
