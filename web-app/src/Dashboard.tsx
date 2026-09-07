@@ -30,9 +30,15 @@ class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any
 
 function Dashboard({ session }: { session: Session }) {
   const [showHistory, setShowHistory] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'Disconnected' | 'Connecting' | 'Connected' | 'Error'>('Disconnected');
-  const [connectionType, setConnectionType] = useState<'USB' | 'BLE' | null>(null);
+  const [postureConnectionStatus, setPostureConnectionStatus] = useState<'Disconnected' | 'Connecting' | 'Connected' | 'Error'>('Disconnected');
+  const [asthmaConnectionStatus, setAsthmaConnectionStatus] = useState<'Disconnected' | 'Connecting' | 'Connected' | 'Error'>('Disconnected');
+  const [postureConnectionType, setPostureConnectionType] = useState<'USB' | 'BLE' | null>(null);
+  const [asthmaConnectionType, setAsthmaConnectionType] = useState<'WIFI' | null>(null);
+  
   const [activeTab, setActiveTab] = useState<'posture' | 'asthma'>('posture');
+
+  const connectionStatus = activeTab === 'posture' ? postureConnectionStatus : asthmaConnectionStatus;
+  const connectionType = activeTab === 'posture' ? postureConnectionType : asthmaConnectionType;
   
   const [currentPosture, setCurrentPosture] = useState<string>('normal_idle');
   const [confidence, setConfidence] = useState<number>(0);
@@ -243,8 +249,8 @@ function Dashboard({ session }: { session: Session }) {
       Notification.requestPermission();
     }
     
-    setConnectionStatus('Connecting');
-    setConnectionType('BLE'); 
+    setPostureConnectionStatus('Connecting');
+    setPostureConnectionType('BLE'); 
     currentConnTypeRef.current = 'BRIDGE_WS';
     sessionIdRef.current = Date.now().toString();
 
@@ -253,7 +259,7 @@ function Dashboard({ session }: { session: Session }) {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      setConnectionStatus('Connected');
+      setPostureConnectionStatus('Connected');
     };
 
     ws.onmessage = (event) => {
@@ -262,11 +268,11 @@ function Dashboard({ session }: { session: Session }) {
     };
 
     ws.onclose = () => {
-      setConnectionStatus('Disconnected');
+      setPostureConnectionStatus('Disconnected');
     };
 
     ws.onerror = () => {
-      setConnectionStatus('Error');
+      setPostureConnectionStatus('Error');
     };
   };
 
@@ -280,8 +286,8 @@ function Dashboard({ session }: { session: Session }) {
       const port = await (navigator as any).serial.requestPort();
       await port.open({ baudRate: 115200 });
       portRef.current = port;
-      setConnectionStatus('Connected');
-      setConnectionType('USB');
+      setPostureConnectionStatus('Connected');
+      setPostureConnectionType('USB');
       currentConnTypeRef.current = 'USB_SERIAL';
       sessionIdRef.current = Date.now().toString();
 
@@ -303,7 +309,7 @@ function Dashboard({ session }: { session: Session }) {
       }
     } catch (e) {
       console.error(e);
-      setConnectionStatus('Error');
+      setPostureConnectionStatus('Error');
     }
   };
 
@@ -318,19 +324,17 @@ function Dashboard({ session }: { session: Session }) {
       Notification.requestPermission();
     }
     
-    setConnectionStatus('Connecting');
-    setConnectionType('USB'); // Giả lập icon USB cho nó đỡ rối
+    setAsthmaConnectionStatus('Connecting');
+    setAsthmaConnectionType('WIFI'); 
     currentConnTypeRef.current = 'WIFI_IP';
     sessionIdRef.current = Date.now().toString();
 
-    // Lần gọi đầu tiên để kiểm tra kết nối
     fetch(`http://${ip}/api`)
       .then(res => res.json())
       .then(data => {
-        setConnectionStatus('Connected');
+        setAsthmaConnectionStatus('Connected');
         if (data.lastLine) parseSerialLine(data.lastLine);
         
-        // Bắt đầu vòng lặp lấy dữ liệu
         wifiIntervalRef.current = setInterval(() => {
           fetch(`http://${ip}/api`)
             .then(res => res.json())
@@ -342,7 +346,7 @@ function Dashboard({ session }: { session: Session }) {
       })
       .catch(e => {
         console.error(e);
-        setConnectionStatus('Error');
+        setAsthmaConnectionStatus('Error');
         alert("Lỗi kết nối WiFi!\n\nChi tiết:\n1. Kiểm tra IP đã đúng chưa.\n2. Lỗi Mixed Content: Trình duyệt chặn HTTPS kết nối tới HTTP. Hãy chọn 'Allow Insecure Content' trong cài đặt trang hoặc dùng localhost.");
       });
   };
@@ -352,23 +356,28 @@ function Dashboard({ session }: { session: Session }) {
       wsRef.current.close();
       wsRef.current = null;
     }
+    setPostureConnectionStatus('Disconnected');
   };
 
   const disconnectSerial = async () => {
     if (readerRef.current) await readerRef.current.cancel();
     if (portRef.current) await portRef.current.close();
+    setPostureConnectionStatus('Disconnected');
   };
 
   const disconnectAll = () => {
-    disconnectBLE();
-    disconnectSerial();
-    disconnectBridge();
-    if (wifiIntervalRef.current) {
-      clearInterval(wifiIntervalRef.current);
-      wifiIntervalRef.current = null;
+    if (activeTab === 'posture') {
+      disconnectBLE();
+      disconnectSerial();
+      disconnectBridge();
+      setPostureConnectionStatus('Disconnected');
+    } else {
+      if (wifiIntervalRef.current) {
+        clearInterval(wifiIntervalRef.current);
+        wifiIntervalRef.current = null;
+      }
+      setAsthmaConnectionStatus('Disconnected');
     }
-    setConnectionStatus('Disconnected');
-    setConnectionType(null);
   };
 
   useEffect(() => {
