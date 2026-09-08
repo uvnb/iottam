@@ -522,18 +522,10 @@ function Dashboard({ session }: { session: Session }) {
         flexWrap: 'wrap'
       }}>
         <span style={{ color: 'var(--text-muted)', fontWeight: 'bold', marginRight: '1rem' }}>PARTNERS & SPONSORS:</span>
-        <div style={{ background: 'white', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
-          <img src="/bk.jpeg" alt="Bach Khoa" style={{ height: '40px', objectFit: 'contain' }} />
-        </div>
-        <div style={{ background: 'white', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
-          <img src="/fpt.jpeg" alt="FPT" style={{ height: '40px', objectFit: 'contain' }} />
-        </div>
-        <div style={{ background: 'white', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
-          <img src="/silicon.jpeg" alt="Silicon Labs" style={{ height: '40px', objectFit: 'contain' }} />
-        </div>
-        <div style={{ background: 'white', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
-          <img src="/dmt.jpeg" alt="DMT Team" style={{ height: '40px', objectFit: 'contain' }} />
-        </div>
+        <img src="/bk.png" alt="Bach Khoa" style={{ height: '45px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
+        <img src="/fpt.png" alt="FPT" style={{ height: '45px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
+        <img src="/silicon.png" alt="Silicon Labs" style={{ height: '45px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
+        <img src="/dmt.png" alt="DMT Team" style={{ height: '45px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
       </div>
     </div>
   );
