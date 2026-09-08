@@ -468,13 +468,15 @@ function Dashboard({ session }: { session: Session }) {
           </div>
         )}
 
-        <div style={{ opacity: connectionStatus === 'Connected' ? 1 : 0.2, filter: connectionStatus === 'Connected' ? 'none' : 'grayscale(80%)', transition: 'all 0.5s', width: '100%', display: 'flex', justifyContent: 'center' }}>
-          {activeTab === 'posture' ? (
-             <PostureDashboard currentPosture={currentPosture} confidence={confidence} statusClass={statusClass} />
-          ) : (
-             <AsthmaDashboard data={asthmaData} logs={asthmaLogs} />
-          )}
-        </div>
+        {connectionStatus === 'Connected' && (
+          <div style={{ transition: 'all 0.5s', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            {activeTab === 'posture' ? (
+               <PostureDashboard currentPosture={currentPosture} confidence={confidence} statusClass={statusClass} />
+            ) : (
+               <AsthmaDashboard data={asthmaData} logs={asthmaLogs} />
+            )}
+          </div>
+        )}
 
         {connectionStatus !== 'Connected' && (
           <div className="connect-modal-overlay">
@@ -485,15 +487,21 @@ function Dashboard({ session }: { session: Session }) {
                 Please power on the CareBot shirt and select a secure connection method to begin real-time analysis.
               </p>
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <button onClick={connectBridge} className="audio-btn" style={{ fontSize: '1.05rem', padding: '12px 20px', background: 'rgba(0, 210, 255, 0.15)', borderColor: '#00d2ff' }}>
-                  📡 CONNECT BLE (WIRELESS)
-                </button>
-                <button onClick={connectSerial} className="audio-btn" style={{ fontSize: '1.05rem', padding: '12px 20px' }}>
-                  🔌 CONNECT USB (WIRED)
-                </button>
-                <button onClick={connectWiFi} className="audio-btn" style={{ fontSize: '1.05rem', padding: '12px 20px', background: 'rgba(255, 51, 102, 0.15)', borderColor: '#ff3366' }}>
-                  🌐 CONNECT WIFI (ESP IP)
-                </button>
+                {activeTab === 'posture' && (
+                  <>
+                    <button onClick={connectBridge} className="audio-btn" style={{ fontSize: '1.05rem', padding: '12px 20px', borderColor: '#00d2ff' }}>
+                      📡 CONNECT BLE (WIRELESS)
+                    </button>
+                    <button onClick={connectSerial} className="audio-btn" style={{ fontSize: '1.05rem', padding: '12px 20px' }}>
+                      🔌 CONNECT USB (WIRED)
+                    </button>
+                  </>
+                )}
+                {activeTab === 'asthma' && (
+                  <button onClick={connectWiFi} className="audio-btn" style={{ fontSize: '1.05rem', padding: '12px 20px', borderColor: '#ff3366' }}>
+                    🌐 CONNECT WIFI (ESP IP)
+                  </button>
+                )}
               </div>
             </div>
           </div>
