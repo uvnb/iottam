@@ -53,6 +53,7 @@ function Dashboard({ session }: { session: Session }) {
   const lastAsthmaBeepRef = useRef<number>(0);
   const sessionIdRef = useRef<string>('');
   const lastLogTimeRef = useRef<number>(0);
+  const lastAsthmaLogTimeRef = useRef<number>(0);
   const currentConnTypeRef = useRef<string>('UNKNOWN');
   const currentPostureRef = useRef<string>('normal_idle');
 
@@ -158,6 +159,28 @@ function Dashboard({ session }: { session: Session }) {
               }
               lastAsthmaBeepRef.current = now;
             }
+          }
+
+          // --- ASTHMA DATA SAVING ---
+          const nowAsthma = Date.now();
+          if (nowAsthma - lastAsthmaLogTimeRef.current > 15000) { // Save every 15 seconds
+            if (sessionIdRef.current) {
+              supabase.from('asthma_logs').insert([{
+                user_id: session.user.id,
+                session_id: sessionIdRef.current,
+                pef: newData.pef,
+                hr: newData.hr,
+                spo2: newData.spo2,
+                pm25: newData.pm25,
+                aqi: newData.aqi,
+                temp: newData.temp,
+                hum: newData.hum,
+                device_type: currentConnTypeRef.current
+              }]).then(({ error }) => {
+                if (error) console.error('Supabase Asthma Sync Error:', error);
+              });
+            }
+            lastAsthmaLogTimeRef.current = nowAsthma;
           }
 
         }
@@ -464,7 +487,7 @@ function Dashboard({ session }: { session: Session }) {
 
         {showHistory && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999, background: 'rgba(0,0,0,0.85)', overflowY: 'auto' }}>
-            <History session={session} onClose={() => setShowHistory(false)} />
+            <History session={session} activeTab={activeTab} onClose={() => setShowHistory(false)} />
           </div>
         )}
 
