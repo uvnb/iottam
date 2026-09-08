@@ -45,6 +45,26 @@ export default function App() {
       </video>
       <div id="overlay"></div>
 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '2rem',
+        padding: '0.5rem 1.5rem',
+        background: 'rgba(3, 10, 22, 0.4)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid rgba(0, 210, 255, 0.2)',
+        position: 'relative',
+        zIndex: 1000,
+        flexWrap: 'wrap'
+      }}>
+        <span style={{ color: 'var(--text-muted)', fontWeight: 'bold', marginRight: '1rem', fontSize: '0.9rem' }}>PARTNERS & SPONSORS:</span>
+        <img src="/bk.jpeg" alt="Bach Khoa" style={{ height: '35px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
+        <img src="/fpt.png" alt="FPT" style={{ height: '35px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
+        <img src="/silicon.png" alt="Silicon Labs" style={{ height: '35px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
+        <img src="/dmt.jpeg" alt="DMT Team" style={{ height: '35px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
+      </div>
+
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />

@@ -508,25 +508,6 @@ function Dashboard({ session }: { session: Session }) {
         )}
 
       </div>
-
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '2rem',
-        padding: '1.5rem',
-        background: 'rgba(3, 10, 22, 0.4)',
-        backdropFilter: 'blur(10px)',
-        borderTop: '1px solid rgba(0, 210, 255, 0.2)',
-        marginTop: 'auto',
-        flexWrap: 'wrap'
-      }}>
-        <span style={{ color: 'var(--text-muted)', fontWeight: 'bold', marginRight: '1rem' }}>PARTNERS & SPONSORS:</span>
-        <img src="/bk.png" alt="Bach Khoa" style={{ height: '45px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
-        <img src="/fpt.png" alt="FPT" style={{ height: '45px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
-        <img src="/silicon.png" alt="Silicon Labs" style={{ height: '45px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
-        <img src="/dmt.png" alt="DMT Team" style={{ height: '45px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
-      </div>
     </div>
   );
 }
