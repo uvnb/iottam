@@ -57,8 +57,6 @@ body.asthma-bg #bg-video-asthma {
   background-image: 
     radial-gradient(circle at 50% 0%, rgba(0, 210, 255, 0.1) 0%, transparent 50%),
     linear-gradient(rgba(3, 10, 22, 0.4), rgba(3, 10, 22, 0.7));
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   transition: all 0.5s ease-in-out;
   pointer-events: none;
 }
@@ -292,7 +290,7 @@ body.asthma-bg #overlay {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: rgba(3, 10, 22, 0.85);
+  background: rgba(3, 10, 22, 0.3);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(0, 210, 255, 0.2);
