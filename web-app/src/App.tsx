@@ -45,7 +45,7 @@ export default function App() {
       </video>
       <div id="overlay"></div>
 
-      <div style={{
+      <div className="sponsor-header" style={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',

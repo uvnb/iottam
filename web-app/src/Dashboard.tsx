@@ -457,7 +457,7 @@ function Dashboard({ session }: { session: Session }) {
       <div className="app-container" style={{ position: 'relative', flex: 1, padding: '2rem', width: '100%', maxWidth: '100%' }}>
         
         {!audioEnabled && connectionStatus === 'Disconnected' && (
-          <button className="audio-btn" onClick={initAudio} style={{ position: 'absolute', top: '1rem', zIndex: 10 }}>
+          <button className="audio-btn" onClick={initAudio} style={{ position: 'absolute', top: '1rem', zIndex: 100 }}>
             ENABLE AUDIO ALERTS
           </button>
         )}
