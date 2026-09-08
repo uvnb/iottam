@@ -40,6 +40,9 @@ export default function App() {
       <video autoPlay loop muted playsInline id="bg-video">
         <source src="/background.mp4" type="video/mp4" />
       </video>
+      <video autoPlay loop muted playsInline id="bg-video-asthma">
+        <source src="/video-asthma.mp4" type="video/mp4" />
+      </video>
       <div id="overlay"></div>
 
       <BrowserRouter>

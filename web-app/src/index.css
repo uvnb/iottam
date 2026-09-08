@@ -24,7 +24,7 @@ body:has(.alert) {
   background-color: var(--bg-alert);
 }
 
-#bg-video {
+#bg-video, #bg-video-asthma {
   position: fixed;
   top: 0;
   left: 0;
@@ -32,6 +32,19 @@ body:has(.alert) {
   height: 100%;
   object-fit: cover;
   z-index: -2;
+  transition: opacity 1s ease-in-out;
+}
+
+#bg-video-asthma {
+  opacity: 0;
+}
+
+body.asthma-bg #bg-video {
+  opacity: 0;
+}
+
+body.asthma-bg #bg-video-asthma {
+  opacity: 1;
 }
 
 #overlay {
@@ -56,18 +69,10 @@ body:has(.alert) #overlay {
     linear-gradient(rgba(26, 5, 5, 0.75), rgba(26, 5, 5, 0.95));
 }
 
-body.asthma-bg #bg-video {
-  display: none;
-}
-
 body.asthma-bg #overlay {
   background-image: 
-    url('/poster-bg.jpg'),
     radial-gradient(circle at 50% 0%, rgba(0, 210, 255, 0.05) 0%, transparent 50%),
-    linear-gradient(rgba(3, 10, 22, 0.85), rgba(3, 10, 22, 0.98));
-  background-size: cover;
-  background-position: center;
-  background-blend-mode: overlay;
+    linear-gradient(rgba(3, 10, 22, 0.85), rgba(3, 10, 22, 0.95));
   opacity: 0.8;
 }
 
