@@ -124,7 +124,7 @@ export default function AsthmaDashboard({ data, logs }: AsthmaDashboardProps) {
       </div>
 
       {/* METRICS GRID */}
-      <div style={{
+      <div className="asthma-grid" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
         gap: '1.5rem'

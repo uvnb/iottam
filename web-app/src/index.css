@@ -412,3 +412,74 @@ body.asthma-bg #overlay {
   transform: scale(1.1);
   filter: drop-shadow(0 0 15px rgba(255,255,255,0.5)) !important;
 }
+
+/* Responsive Web Design */
+@media screen and (max-width: 1024px) {
+  .postures-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .top-header {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .header-left, .header-right {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .header-center {
+    width: 100%;
+    justify-content: center;
+    order: 3;
+    flex-wrap: wrap;
+  }
+  
+  .main-content {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .sponsor-logo {
+    height: 45px !important;
+  }
+  
+  .asthma-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .postures-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .connect-prompt {
+    margin: 1rem;
+    padding: 2rem 1rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .postures-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .asthma-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .sponsor-logo {
+    height: 35px !important;
+  }
+  
+  .header-title {
+    font-size: 1.2rem;
+  }
+  
+  #root {
+    padding: 1rem;
+  }
+}

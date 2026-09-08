@@ -59,7 +59,7 @@ export default function App() {
         <img src="/bk.jpeg" alt="Bach Khoa" style={{ height: '65px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
         <img src="/fpt.png" alt="FPT" style={{ height: '65px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
         <img src="/silicon.png" alt="Silicon Labs" style={{ height: '65px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
-        <img src="/dmt.jpeg" alt="DMT Team" style={{ height: '65px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
+        <img src="/dmt.png" alt="DMT Team" style={{ height: '65px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))', transition: 'all 0.3s' }} className="sponsor-logo" />
       </div>
 
       <BrowserRouter>
