@@ -283,10 +283,7 @@ body.asthma-bg #overlay {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: rgba(3, 10, 22, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(0, 210, 255, 0.2);
+  background: transparent;
   z-index: 1000;
   box-sizing: border-box;
 }

@@ -50,10 +50,8 @@ export default function App() {
         justifyContent: 'center',
         alignItems: 'center',
         gap: '3rem',
-        padding: '0.8rem 2rem',
-        background: 'rgba(3, 10, 22, 0.4)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid rgba(0, 210, 255, 0.2)',
+        padding: '1rem 2rem',
+        background: 'transparent',
         position: 'relative',
         zIndex: 1000,
         flexWrap: 'wrap'
