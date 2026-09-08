@@ -508,6 +508,33 @@ function Dashboard({ session }: { session: Session }) {
         )}
 
       </div>
+
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '2rem',
+        padding: '1.5rem',
+        background: 'rgba(3, 10, 22, 0.4)',
+        backdropFilter: 'blur(10px)',
+        borderTop: '1px solid rgba(0, 210, 255, 0.2)',
+        marginTop: 'auto',
+        flexWrap: 'wrap'
+      }}>
+        <span style={{ color: 'var(--text-muted)', fontWeight: 'bold', marginRight: '1rem' }}>PARTNERS & SPONSORS:</span>
+        <div style={{ background: 'white', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+          <img src="/bk.jpeg" alt="Bach Khoa" style={{ height: '40px', objectFit: 'contain' }} />
+        </div>
+        <div style={{ background: 'white', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+          <img src="/fpt.jpeg" alt="FPT" style={{ height: '40px', objectFit: 'contain' }} />
+        </div>
+        <div style={{ background: 'white', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+          <img src="/silicon.jpeg" alt="Silicon Labs" style={{ height: '40px', objectFit: 'contain' }} />
+        </div>
+        <div style={{ background: 'white', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+          <img src="/dmt.jpeg" alt="DMT Team" style={{ height: '40px', objectFit: 'contain' }} />
+        </div>
+      </div>
     </div>
   );
 }
