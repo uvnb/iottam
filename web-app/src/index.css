@@ -35,6 +35,10 @@ body:has(.alert) {
   transition: opacity 1s ease-in-out;
 }
 
+#bg-video {
+  opacity: 0.5;
+}
+
 #bg-video-asthma {
   opacity: 0;
 }
@@ -44,7 +48,7 @@ body.asthma-bg #bg-video {
 }
 
 body.asthma-bg #bg-video-asthma {
-  opacity: 1;
+  opacity: 0.5;
 }
 
 #overlay {
