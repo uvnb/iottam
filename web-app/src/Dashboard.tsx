@@ -109,9 +109,10 @@ function Dashboard({ session }: { session: Session }) {
     if (line.length === 0) return;
 
     // --- ASTHMA DATA PARSING ---
-    if (line.startsWith('DATA,ID=')) {
+    if (line.includes('DATA,ID=')) {
       try {
-        const parts = line.split(',');
+        const dataStr = line.substring(line.indexOf('DATA,ID='));
+        const parts = dataStr.split(',');
         const dataMap: any = {};
         parts.forEach(part => {
           const [key, val] = part.split('=');
@@ -136,12 +137,12 @@ function Dashboard({ session }: { session: Session }) {
             spo2: parseFloat(dataMap['SPO2']) || 0,
             rr: parseFloat(dataMap['RR']) || 0,
             pef: parseFloat(dataMap['PEF']) || 0,
-            rawLine: line
+            rawLine: dataStr
           };
           
           setAsthmaData(newData);
           setAsthmaLogs(prev => {
-            const newLogs = [line, ...prev];
+            const newLogs = [dataStr, ...prev];
             if (newLogs.length > 50) newLogs.pop();
             return newLogs;
           });
@@ -196,9 +197,14 @@ function Dashboard({ session }: { session: Session }) {
     let conf = 0;
     let valid = false;
 
-    if (line.startsWith('{')) {
+    let jsonStr = line;
+    if (line.includes('{') && line.includes('}')) {
+       jsonStr = line.substring(line.indexOf('{'), line.lastIndexOf('}') + 1);
+    }
+
+    if (jsonStr.startsWith('{')) {
       try {
-        const payload = JSON.parse(line);
+        const payload = JSON.parse(jsonStr);
         if (payload.type === 'posture' && payload.data) {
           postureKey = payload.data.posture;
           conf = parseFloat(payload.data.confidence);
@@ -212,7 +218,7 @@ function Dashboard({ session }: { session: Session }) {
       } catch (e) {}
     }
 
-    if (!valid && line.includes('[AI] class=')) {
+    if (!valid && line.includes('posture=')) {
       const postureMatch = line.match(/posture=([a-z_]+)/);
       const confMatch = line.match(/confidence=([\d\.]+)/);
       if (postureMatch && confMatch) {
