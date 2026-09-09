@@ -105,6 +105,7 @@ function Dashboard({ session }: { session: Session }) {
   };
 
   const parseSerialLine = (line: string) => {
+    line = line.trim();
     if (line.length === 0) return;
 
     // --- ASTHMA DATA PARSING ---

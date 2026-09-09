@@ -38,5 +38,13 @@ export const POSTURE_DATA: Record<string, any> = {
     reminder: "Relax your arms, level your shoulders, and avoid carrying loads on one side for too long.",
     affected: "Trapezius • Left/Right shoulders • Scapula area",
     safe: false
+  },
+  "lifting_correct": {
+    title: "SAFE LIFTING",
+    subtitle: "Proper lifting posture",
+    alert: "LIFTING OK  •  GOOD FORM  •  KEEP IT UP",
+    reminder: "You are lifting correctly using your legs and keeping your back straight. Continue to maintain this form.",
+    affected: "Legs • Core (Safe)",
+    safe: true
   }
 };
