@@ -165,7 +165,8 @@ function Dashboard({ session }: { session: Session }) {
 
           // --- ASTHMA DATA SAVING ---
           const nowAsthma = Date.now();
-          if (nowAsthma - lastAsthmaLogTimeRef.current > 15000) { // Save every 15 seconds
+          const hasValidData = newData.pef > 0 || newData.hr > 0 || newData.spo2 > 0;
+          if (hasValidData && (nowAsthma - lastAsthmaLogTimeRef.current > 15000)) { // Save every 15 seconds
             if (sessionIdRef.current) {
               supabase.from('asthma_logs').insert([{
                 user_id: session.user.id,

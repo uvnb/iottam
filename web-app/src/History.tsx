@@ -32,7 +32,11 @@ export default function History({ session, activeTab = 'posture', onClose }: { s
         setErrorMsg(error.message);
         throw error;
       }
-      setLogs(data || []);
+      let fetchedLogs = data || [];
+      if (activeTab === 'asthma') {
+        fetchedLogs = fetchedLogs.filter((log: any) => log.pef > 0 || log.hr > 0 || log.spo2 > 0);
+      }
+      setLogs(fetchedLogs);
     } catch (error) {
       console.error('Error fetching logs:', error);
     } finally {
