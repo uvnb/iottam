@@ -460,7 +460,7 @@ function Dashboard({ session }: { session: Session }) {
         <div className="header-center" style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(0,0,0,0.4)', padding: '0.5rem 1.5rem', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className={`status-dot ${connectionStatus === 'Connected' ? 'connected' : connectionStatus === 'Error' ? 'error' : ''}`}></div>
-            <span style={{ fontSize: '0.95rem' }}>
+            <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
               {connectionStatus === 'Disconnected' && 'System Offline'}
               {connectionStatus === 'Connecting' && `Connecting ${connectionType}...`}
               {connectionStatus === 'Connected' && `Connected via ${connectionType}`}
@@ -512,7 +512,7 @@ function Dashboard({ session }: { session: Session }) {
           <div className="connect-modal-overlay">
             <div className="connect-prompt">
               <div className="status-icon" style={{ marginBottom: '1.5rem', width: '80px', height: '80px', fontSize: '2.5rem' }}>📡</div>
-              <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem' }}>System Offline</h2>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '2px', textShadow: '0 0 15px rgba(0, 210, 255, 0.5)' }}>SYSTEM OFFLINE</h2>
               <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.6' }}>
                 Please power on the CareBot shirt and select a secure connection method to begin real-time analysis.
               </p>

@@ -36,7 +36,7 @@ body:has(.alert) {
 }
 
 #bg-video {
-  opacity: 0.25;
+  opacity: 0.1;
 }
 
 #bg-video-asthma {
@@ -48,7 +48,7 @@ body.asthma-bg #bg-video {
 }
 
 body.asthma-bg #bg-video-asthma {
-  opacity: 0.25;
+  opacity: 0.1;
 }
 
 #overlay {
