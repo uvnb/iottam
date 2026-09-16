@@ -73,8 +73,11 @@ body.asthma-bg #overlay {
 
 #root {
   width: 100%;
-  padding: 2rem;
+  padding: 0;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .app-container {
@@ -496,8 +499,19 @@ body.asthma-bg #overlay {
   .header-title {
     font-size: 1.2rem;
   }
-  
-  #root {
-    padding: 1rem;
-  }
+}
+
+.footer-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.footer-link:hover {
+  color: var(--accent-normal);
+  transform: translateY(-2px);
 }

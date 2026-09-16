@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import DashboardWrapper from './Dashboard';
 import Login from './Login';
+import Footer from './Footer';
 import './index.css';
 
 import Landing from './Landing';
@@ -69,6 +70,8 @@ export default function App() {
           <Route path="/dashboard" element={session ? <DashboardWrapper session={session} /> : <Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
+      
+      <Footer />
     </>
   );
 }
