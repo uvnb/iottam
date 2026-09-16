@@ -3,6 +3,7 @@ import './index.css';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import History from './History';
+import Demos from './Demos';
 import PostureDashboard from './PostureDashboard';
 import AsthmaDashboard, { type AsthmaData } from './AsthmaDashboard';
 import { POSTURE_DATA } from './constants';
@@ -30,6 +31,7 @@ class ErrorBoundary extends React.Component<any, { hasError: boolean, error: any
 
 function Dashboard({ session }: { session: Session }) {
   const [showHistory, setShowHistory] = useState(false);
+  const [showDemos, setShowDemos] = useState(false);
   const [postureConnectionStatus, setPostureConnectionStatus] = useState<'Disconnected' | 'Connecting' | 'Connected' | 'Error'>('Disconnected');
   const [asthmaConnectionStatus, setAsthmaConnectionStatus] = useState<'Disconnected' | 'Connecting' | 'Connected' | 'Error'>('Disconnected');
   const [postureConnectionType, setPostureConnectionType] = useState<'USB' | 'BLE' | null>(null);
@@ -476,6 +478,9 @@ function Dashboard({ session }: { session: Session }) {
         </div>
 
         <div className="header-right">
+          <button onClick={() => setShowDemos(true)} style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid #10b981', color: '#10b981', borderRadius: '4px', cursor: 'pointer', padding: '0.4rem 0.8rem', fontWeight: 'bold' }}>
+            🎬 Demos
+          </button>
           <button onClick={() => setShowHistory(true)} style={{ background: 'rgba(0,210,255,0.2)', border: '1px solid var(--accent-normal)', color: 'var(--accent-normal)', borderRadius: '4px', cursor: 'pointer', padding: '0.4rem 0.8rem', fontWeight: 'bold' }}>
             📊 History
           </button>
@@ -496,6 +501,12 @@ function Dashboard({ session }: { session: Session }) {
         {showHistory && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999, background: 'rgba(0,0,0,0.85)', overflowY: 'auto' }}>
             <History session={session} activeTab={activeTab} onClose={() => setShowHistory(false)} />
+          </div>
+        )}
+
+        {showDemos && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999, background: 'rgba(0,0,0,0.85)', overflowY: 'auto' }}>
+            <Demos activeTab={activeTab} onClose={() => setShowDemos(false)} />
           </div>
         )}
 

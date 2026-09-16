@@ -434,6 +434,8 @@ body.asthma-bg #overlay {
   .header-left, .header-right {
     width: 100%;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
   
   .header-center {
