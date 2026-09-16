@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProjectInfo from './ProjectInfo';
 import AsthmaProjectInfo from './AsthmaProjectInfo';
+import Demos from './Demos';
 
 export default function Landing() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'posture' | 'asthma'>('posture');
+  const [showDemos, setShowDemos] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'asthma') {
@@ -47,25 +49,51 @@ export default function Landing() {
 
         {activeTab === 'posture' ? <ProjectInfo /> : <AsthmaProjectInfo />}
 
-        <button 
-          onClick={() => navigate('/login')}
-          className="audio-btn" 
-          style={{ 
-            padding: '1.2rem 3rem', 
-            fontSize: '1.2rem', 
-            borderRadius: '50px',
-            boxShadow: activeTab === 'posture' ? '0 0 20px rgba(0, 210, 255, 0.4)' : '0 0 20px rgba(255, 51, 102, 0.4)',
-            marginTop: '1rem',
-            background: activeTab === 'posture' ? 'rgba(0, 210, 255, 0.15)' : 'rgba(255, 51, 102, 0.15)',
-            backdropFilter: 'blur(10px)',
-            border: `2px solid ${activeTab === 'posture' ? 'rgba(0, 210, 255, 0.5)' : 'rgba(255, 51, 102, 0.5)'}`,
-            color: activeTab === 'posture' ? 'var(--accent-normal)' : 'var(--accent-alert)'
-          }}
-        >
-          ACCESS {activeTab === 'posture' ? 'POSTURE' : 'ASTHMA'} SYSTEM
-        </button>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+          <button 
+            onClick={() => setShowDemos(true)}
+            className="audio-btn" 
+            style={{ 
+              padding: '1.2rem 3rem', 
+              fontSize: '1.2rem', 
+              borderRadius: '50px',
+              boxShadow: activeTab === 'posture' ? '0 0 20px rgba(0, 210, 255, 0.4)' : '0 0 20px rgba(255, 51, 102, 0.4)',
+              marginTop: '1rem',
+              background: 'transparent',
+              backdropFilter: 'blur(10px)',
+              border: `2px solid ${activeTab === 'posture' ? 'rgba(0, 210, 255, 0.5)' : 'rgba(255, 51, 102, 0.5)'}`,
+              color: activeTab === 'posture' ? 'var(--accent-normal)' : 'var(--accent-alert)'
+            }}
+          >
+            🎬 WATCH DEMOS
+          </button>
+
+          <button 
+            onClick={() => navigate('/login')}
+            className="audio-btn" 
+            style={{ 
+              padding: '1.2rem 3rem', 
+              fontSize: '1.2rem', 
+              borderRadius: '50px',
+              boxShadow: activeTab === 'posture' ? '0 0 20px rgba(0, 210, 255, 0.4)' : '0 0 20px rgba(255, 51, 102, 0.4)',
+              marginTop: '1rem',
+              background: activeTab === 'posture' ? 'rgba(0, 210, 255, 0.15)' : 'rgba(255, 51, 102, 0.15)',
+              backdropFilter: 'blur(10px)',
+              border: `2px solid ${activeTab === 'posture' ? 'rgba(0, 210, 255, 0.5)' : 'rgba(255, 51, 102, 0.5)'}`,
+              color: activeTab === 'posture' ? 'var(--accent-normal)' : 'var(--accent-alert)'
+            }}
+          >
+            ACCESS {activeTab === 'posture' ? 'POSTURE' : 'ASTHMA'} SYSTEM
+          </button>
+        </div>
         
       </div>
+
+      {showDemos && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999, background: 'rgba(0,0,0,0.9)', overflowY: 'auto', display: 'flex', justifyContent: 'center' }}>
+          <Demos activeTab={activeTab} onClose={() => setShowDemos(false)} />
+        </div>
+      )}
     </div>
   );
 }
