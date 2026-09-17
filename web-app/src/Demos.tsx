@@ -7,8 +7,9 @@ export default function Demos({ activeTab, onClose }: { activeTab: 'posture' | '
     { src: '/posture-demo-3.mp4', title: 'Demo 3: Error Detection' }
   ];
   
-  const asthmaVideos: {src: string, title: string}[] = [
-    // Future asthma videos
+  const asthmaVideos = [
+    { src: '/asthma-demo-1.mp4', title: 'Demo 1: Asthma Monitor' },
+    { src: '/asthma-demo-2.mp4', title: 'Demo 2: Real-time PEF Analysis' }
   ];
   
   const videos = isPosture ? postureVideos : asthmaVideos;
