@@ -56,7 +56,7 @@ export default function Demos({ activeTab, onClose }: { activeTab: 'posture' | '
                   src={vid.src} 
                   controls
                   preload="metadata"
-                  style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block', background: '#000' }} 
+                  style={{ width: '100%', aspectRatio: isPosture ? '16/9' : 'auto', maxHeight: isPosture ? 'auto' : '65vh', objectFit: 'contain', display: 'block', background: '#000' }} 
                 />
                 <div style={{ padding: '1.2rem', textAlign: 'center', background: 'rgba(255,255,255,0.03)' }}>
                   <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', letterSpacing: '0.5px' }}>{vid.title}</h4>
