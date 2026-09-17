@@ -9,6 +9,31 @@ export default function Landing() {
   const [activeTab, setActiveTab] = useState<'posture' | 'asthma'>('posture');
   const [showDemos, setShowDemos] = useState(false);
 
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'asthma') {
       document.body.classList.add('asthma-bg');
@@ -50,6 +75,27 @@ export default function Landing() {
         {activeTab === 'posture' ? <ProjectInfo /> : <AsthmaProjectInfo />}
 
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+          {deferredPrompt && (
+            <button 
+              onClick={handleInstallClick}
+              className="audio-btn" 
+              style={{ 
+                padding: '1.2rem 3rem', 
+                fontSize: '1.2rem', 
+                borderRadius: '50px',
+                boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)',
+                marginTop: '1rem',
+                background: 'rgba(16, 185, 129, 0.15)',
+                backdropFilter: 'blur(10px)',
+                border: '2px solid rgba(16, 185, 129, 0.5)',
+                color: '#10b981',
+                fontWeight: 'bold'
+              }}
+            >
+              ⬇ INSTALL APP
+            </button>
+          )}
+
           <button 
             onClick={() => setShowDemos(true)}
             className="audio-btn" 
