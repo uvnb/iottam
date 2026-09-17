@@ -153,10 +153,10 @@ function Dashboard({ session }: { session: Session }) {
           if (newData.pef > 0 && newData.pef <= 300) {
             const now = Date.now();
             if (now - lastAsthmaBeepRef.current > 10000) {
-              playAlertSound("Cảnh báo! Lưu lượng đỉnh quá thấp, nguy cơ lên cơn hen suyễn.");
+              playAlertSound("Warning! Peak expiratory flow is critically low. High risk of an asthma attack.");
               if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('⚠️ CẢNH BÁO HEN SUYỄN', {
-                  body: `Nguy cơ cao! Lưu lượng đỉnh (PEF) giảm xuống mức ${newData.pef.toFixed(1)} L/min.`,
+                new Notification('⚠️ ASTHMA ALERT', {
+                  body: `High risk! Peak flow (PEF) has dropped to ${newData.pef.toFixed(1)} L/min.`,
                   tag: 'asthma-alert',
                   renotify: true
                 } as any);
